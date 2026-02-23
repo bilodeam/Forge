@@ -853,6 +853,109 @@
   .prog-prog-row.current { border-color: rgba(232,255,71,0.3); background: rgba(232,255,71,0.03); }
   .prog-prog-row.current .ppn { color: var(--accent); }
 
+
+  /* ===== REST DAY SCREEN ===== */
+  #restday { background: var(--bg); overflow-y: auto; padding-bottom: 100px; }
+
+  .rest-hero {
+    padding: 52px 24px 28px;
+    position: relative; overflow: hidden;
+  }
+  .rest-hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 260px; height: 260px;
+    background: radial-gradient(circle, rgba(71,212,255,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .rest-day-label { font-family: var(--font-mono); font-size: 11px; color: var(--accent3); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
+  .rest-day-title { font-family: var(--font-display); font-size: 64px; line-height: 0.9; color: var(--text); margin-bottom: 6px; }
+  .rest-day-title span { color: var(--accent3); }
+  .rest-day-msg { font-size: 14px; color: var(--text2); font-weight: 300; line-height: 1.5; margin-top: 10px; }
+
+  /* WEEK PROGRESS */
+  .rest-week { margin: 0 16px 20px; }
+  .rest-section-label { font-family: var(--font-mono); font-size: 11px; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; padding: 0 4px; }
+  .rest-week-dots { display: flex; gap: 8px; }
+  .rest-week-dot {
+    flex: 1;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 8px;
+    text-align: center;
+    transition: all 0.3s;
+  }
+  .rest-week-dot.done { background: rgba(232,255,71,0.08); border-color: rgba(232,255,71,0.3); }
+  .rest-week-dot.next { border-color: rgba(71,212,255,0.4); background: rgba(71,212,255,0.05); }
+  .rest-week-dot .rdl { font-family: var(--font-mono); font-size: 10px; color: var(--text3); margin-bottom: 6px; }
+  .rest-week-dot.done .rdl { color: var(--accent); }
+  .rest-week-dot.next .rdl { color: var(--accent3); }
+  .rest-week-dot .rdi { font-size: 16px; }
+
+  /* RECOVERY CHECKLIST */
+  .rest-checklist { margin: 0 16px 20px; }
+  .rest-check-items { display: flex; flex-direction: column; gap: 8px; }
+  .rest-check-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 14px;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .rest-check-item.checked { background: rgba(74,222,128,0.05); border-color: rgba(74,222,128,0.25); }
+  .rest-check-icon { font-size: 22px; flex-shrink: 0; }
+  .rest-check-info { flex: 1; }
+  .rest-check-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 2px; transition: color 0.25s; }
+  .rest-check-item.checked .rest-check-title { color: var(--text2); }
+  .rest-check-sub { font-size: 12px; color: var(--text3); font-weight: 300; }
+  .rest-check-box {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+    transition: all 0.25s;
+  }
+  .rest-check-item.checked .rest-check-box { background: var(--green); border-color: var(--green); color: #000; }
+
+  /* TOMORROW PREVIEW */
+  .rest-tomorrow { margin: 0 16px 20px; }
+  .rest-tomorrow-card {
+    background: linear-gradient(135deg, rgba(232,255,71,0.06) 0%, var(--bg2) 100%);
+    border: 1px solid rgba(232,255,71,0.2);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex; align-items: center; gap: 16px;
+    cursor: pointer;
+  }
+  .rest-tomorrow-card:active { transform: scale(0.98); }
+  .rest-tomorrow-badge {
+    width: 52px; height: 52px;
+    background: var(--accent);
+    color: #000;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 900;
+    text-align: center;
+    line-height: 1.1;
+    flex-shrink: 0;
+  }
+  .rest-tomorrow-info { flex: 1; }
+  .rest-tomorrow-label { font-family: var(--font-mono); font-size: 10px; color: var(--accent); letter-spacing: 2px; margin-bottom: 4px; }
+  .rest-tomorrow-name { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .rest-tomorrow-focus { font-size: 12px; color: var(--text2); font-weight: 300; }
+  .rest-tomorrow-arrow { color: var(--accent); font-size: 20px; }
+  .rest-tomorrow-card.noday { border-color: var(--border); background: var(--bg2); cursor: default; }
+  .rest-tomorrow-card.noday .rest-tomorrow-badge { background: var(--bg3); color: var(--text3); }
+  .rest-tomorrow-card.noday .rest-tomorrow-label { color: var(--text3); }
+
   /* SCROLLBAR */
   ::-webkit-scrollbar { width: 0; }
 </style>
@@ -862,9 +965,15 @@
 <!-- HOME SCREEN -->
 <div id="home" class="screen active">
   <div class="home-hero">
-    <div class="hero-label">Week 1 · Day 1</div>
-    <div class="hero-title">FOR<span>GE</span></div>
-    <div class="hero-sub">34M · Body Recomp · 4 days/week</div>
+    <div style="position:relative;">
+      <div class="hero-label">Week 1 · Day 1</div>
+      <div class="hero-title">FOR<span>GE</span></div>
+      <div id="restDayBanner" onclick="switchTab('restday')" style="display:none;position:absolute;top:0;right:0;background:rgba(71,212,255,0.1);border:1px solid rgba(71,212,255,0.3);border-radius:12px;padding:8px 12px;cursor:pointer;text-align:center;">
+        <div style="font-size:20px">😴</div>
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent3);letter-spacing:1px;margin-top:3px;">REST</div>
+      </div>
+  </div>
+  <div
   </div>
 
   <div class="home-stats">
@@ -1000,6 +1109,42 @@
   </div>
 </div>
 
+<!-- REST DAY SCREEN -->
+<div id="restday" class="screen">
+  <div class="rest-hero">
+    <div class="rest-day-label" id="restDayLabel">Wednesday · Rest Day</div>
+    <div class="rest-day-title">REST<br><span>DAY</span></div>
+    <div class="rest-day-msg" id="restDayMsg">Recovery is where the gains are made. Eat your protein, hydrate, and let your body rebuild.</div>
+  </div>
+
+  <div class="rest-week">
+    <div class="rest-section-label">This Week</div>
+    <div class="rest-week-dots" id="restWeekDots"></div>
+  </div>
+
+  <div class="rest-checklist">
+    <div class="rest-section-label">Recovery Checklist</div>
+    <div class="rest-check-items" id="restCheckItems"></div>
+  </div>
+
+  <div class="rest-tomorrow">
+    <div class="rest-section-label">Coming Up</div>
+    <div id="restTomorrowCard"></div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="switchTab('home')">
+      <div class="nav-icon">🏠</div><div class="nav-label">Home</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('plan')">
+      <div class="nav-icon">📅</div><div class="nav-label">Plan</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('progress-screen')">
+      <div class="nav-icon">📊</div><div class="nav-label">Progress</div>
+    </div>
+  </div>
+</div>
+
 <!-- WORKOUT SCREEN -->
 <div id="workout" class="screen">
   <div class="workout-header">
@@ -1103,7 +1248,7 @@ const DAYS = [
     cardio: { duration: 15, type: 'Stationary Bike', intensity: 'Moderate resistance', bpm: '120–135 bpm' }
   },
   {
-    id: 'C', name: 'UPPER', day: 'Friday',
+    id: 'C', name: 'UPPER', day: 'Thursday',
     focus: 'Compound Strength · Arms',
     time: '~53 min',
     lifting: [
@@ -1122,7 +1267,7 @@ const DAYS = [
     cardio: { duration: 15, type: 'Incline Treadmill or Bike', intensity: 'Zone 2 intensity', bpm: '120–135 bpm' }
   },
   {
-    id: 'D', name: 'LEGS', day: 'Thursday',
+    id: 'D', name: 'LEGS', day: 'Friday',
     focus: 'Quads · Hamstrings · Glutes · Calves',
     time: '~57 min',
     lifting: [
@@ -1157,7 +1302,7 @@ let currentExForTimer = '';
 function initHome() {
   const cards = document.getElementById('dayCards');
   const today = new Date().getDay(); // 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
-  const dayMap = { 1: 0, 2: 1, 4: 2, 5: 3 }; // Mon→A, Tue→B, Thu→D, Fri→C
+  const dayMap = { 1: 0, 2: 1, 4: 2, 5: 3 }; // Mon→A, Tue→B, Thu→C, Fri→D
   const todayIdx = dayMap[today];
 
   cards.innerHTML = '';
@@ -1178,6 +1323,10 @@ function initHome() {
     if (!isDone) card.onclick = () => startWorkout(i);
     cards.appendChild(card);
   });
+
+  // Show rest day nudge if today is rest day
+  const restBanner = document.getElementById('restDayBanner');
+  if (restBanner) restBanner.style.display = isRestDay() ? 'flex' : 'none';
 
   // update stats
   const done = completedDays.length;
@@ -1494,6 +1643,7 @@ function switchTab(tab) {
   window.scrollTo(0, 0);
   if (tab === 'plan') buildPlan();
   if (tab === 'progress-screen') buildProgress();
+  if (tab === 'restday') buildRestDay();
 }
 
 // ===== PLAN TAB =====
@@ -1686,6 +1836,124 @@ finishWorkout = function() {
 
   _origFinish();
 };
+
+
+// ===== REST DAY =====
+const REST_CHECKS = [
+  { icon: '💧', title: 'Drank 3L water today', sub: 'Hydration accelerates recovery' },
+  { icon: '🥛', title: 'Hit protein target', sub: '1.8–2.2g per kg bodyweight' },
+  { icon: '😴', title: 'Slept 7.5h+ last night', sub: 'Sleep is where muscle is built' },
+  { icon: '🚶', title: 'Hit 8,000 steps', sub: 'NEAT keeps your metabolism active' },
+  { icon: '🍌', title: 'Ate well today', sub: 'Fuel recovery, not junk' },
+];
+
+const DAY_MESSAGES = {
+  0: { label: 'Sunday · Rest Day', msg: 'Full recovery day. Big week ahead — recharge properly.' },
+  3: { label: 'Wednesday · Rest Day', msg: 'Halfway through the week. Let your upper body recover before legs tomorrow.' },
+  6: { label: 'Saturday · Rest Day', msg: 'Legs were yesterday — they need this. Eat well, sleep well.' },
+};
+
+// dayIdx map: 1→A(0), 2→B(1), 4→C(2), 5→D(3)
+const DAY_SCHEDULE = [
+  { jsDay: 1, dayIdx: 0 }, // Mon → A
+  { jsDay: 2, dayIdx: 1 }, // Tue → B
+  { jsDay: 4, dayIdx: 2 }, // Thu → C
+  { jsDay: 5, dayIdx: 3 }, // Fri → D
+];
+
+function buildRestDay() {
+  const today = new Date().getDay();
+  const restChecks = JSON.parse(localStorage.getItem('forge_rest_checks_' + today) || '[]');
+
+  // Hero message
+  const info = DAY_MESSAGES[today] || { label: 'Rest Day', msg: 'Recovery is where the gains are made. Eat your protein, hydrate, and let your body rebuild.' };
+  document.getElementById('restDayLabel').textContent = info.label;
+  document.getElementById('restDayMsg').textContent = info.msg;
+
+  // Week dots
+  const dotsEl = document.getElementById('restWeekDots');
+  dotsEl.innerHTML = '';
+  const nextScheduled = DAY_SCHEDULE.find(d => d.jsDay > today) || DAY_SCHEDULE[0];
+  DAYS.forEach((day, i) => {
+    const isDone = completedDays.includes(day.id);
+    const isNext = nextScheduled && nextScheduled.dayIdx === i;
+    const dot = document.createElement('div');
+    dot.className = `rest-week-dot ${isDone ? 'done' : ''} ${isNext && !isDone ? 'next' : ''}`;
+    dot.innerHTML = `<div class="rdl">DAY ${day.id}</div><div class="rdi">${isDone ? '✓' : isNext && !isDone ? '→' : '·'}</div>`;
+    dotsEl.appendChild(dot);
+  });
+
+  // Recovery checklist
+  const checkEl = document.getElementById('restCheckItems');
+  checkEl.innerHTML = '';
+  REST_CHECKS.forEach((c, i) => {
+    const isChecked = restChecks.includes(i);
+    const item = document.createElement('div');
+    item.className = `rest-check-item ${isChecked ? 'checked' : ''}`;
+    item.id = `rcheck_${i}`;
+    item.innerHTML = `
+      <div class="rest-check-icon">${c.icon}</div>
+      <div class="rest-check-info">
+        <div class="rest-check-title">${c.title}</div>
+        <div class="rest-check-sub">${c.sub}</div>
+      </div>
+      <div class="rest-check-box">${isChecked ? '✓' : ''}</div>
+    `;
+    item.onclick = () => toggleRestCheck(i, today);
+    checkEl.appendChild(item);
+  });
+
+  // Tomorrow preview
+  const tomorrowJsDay = (today + 1) % 7;
+  const tomorrowSchedule = DAY_SCHEDULE.find(d => d.jsDay === tomorrowJsDay);
+  const tomorrowCard = document.getElementById('restTomorrowCard');
+  if (tomorrowSchedule) {
+    const nextDay = DAYS[tomorrowSchedule.dayIdx];
+    tomorrowCard.innerHTML = `
+      <div class="rest-tomorrow-card" onclick="startWorkout(${tomorrowSchedule.dayIdx})">
+        <div class="rest-tomorrow-badge">DAY ${nextDay.id}</div>
+        <div class="rest-tomorrow-info">
+          <div class="rest-tomorrow-label">Tomorrow</div>
+          <div class="rest-tomorrow-name">${nextDay.name}</div>
+          <div class="rest-tomorrow-focus">${nextDay.focus}</div>
+        </div>
+        <div class="rest-tomorrow-arrow">›</div>
+      </div>`;
+  } else {
+    tomorrowCard.innerHTML = `
+      <div class="rest-tomorrow-card noday">
+        <div class="rest-tomorrow-badge">😴</div>
+        <div class="rest-tomorrow-info">
+          <div class="rest-tomorrow-label">Tomorrow</div>
+          <div class="rest-tomorrow-name">Another Rest Day</div>
+          <div class="rest-tomorrow-focus">Keep recovering — you've earned it</div>
+        </div>
+      </div>`;
+  }
+}
+
+function toggleRestCheck(i, today) {
+  const key = 'forge_rest_checks_' + today;
+  let checks = JSON.parse(localStorage.getItem(key) || '[]');
+  const item = document.getElementById(`rcheck_${i}`);
+  const box = item.querySelector('.rest-check-box');
+  if (checks.includes(i)) {
+    checks = checks.filter(c => c !== i);
+    item.classList.remove('checked');
+    box.textContent = '';
+  } else {
+    checks.push(i);
+    item.classList.add('checked');
+    box.textContent = '✓';
+  }
+  localStorage.setItem(key, JSON.stringify(checks));
+}
+
+// Auto-show rest day on home if today is a rest day
+function isRestDay() {
+  const today = new Date().getDay();
+  return ![1, 2, 4, 5].includes(today); // not Mon/Tue/Thu/Fri
+}
 
 // UNLOCK VIBRATION on first touch (Android Chrome requires user gesture)
 document.addEventListener("touchstart", function() {
