@@ -577,6 +577,8 @@ function goHome() {
 
 // HOME
 function initHome() {
+  // Always re-read from storage so display is always fresh
+  completedDays = JSON.parse(localStorage.getItem('forge_completed') || '[]');
   var today = new Date().getDay();
   var todayIdx = DAY_MAP[today];
   var isRest = REST_DAYS_JS.indexOf(today) >= 0;
