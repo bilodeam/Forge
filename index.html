@@ -475,7 +475,7 @@ var DAYS = [
     lifting:[
       {name:'Barbell Bench Press', sets:3, reps:'8–10', rest:45, notes:'Primary chest builder. 2 sec controlled descent.'},
       {name:'Incline DB Press', sets:3, reps:'10–12', rest:45, notes:'Upper chest. Full stretch at bottom.'},
-      {name:'Cable Fly', sets:3, reps:'13–15', rest:45, notes:'Squeeze hard at top. Slow and deliberate.'},
+      {name:'DB Pec Fly', sets:3, reps:'13–15', rest:45, notes:'Wide arc down, squeeze hard at top. Keep slight bend in elbows throughout.'},
       {name:'DB Lateral Raise', sets:3, reps:'13–15', rest:45, notes:'Light weight, strict form. No swinging.'},
       {name:'Seated DB Overhead Press', sets:3, reps:'10–12', rest:45, notes:'Full lockout at top. Controlled descent.'},
       {name:'Tricep Rope Pushdown', sets:3, reps:'13–15', rest:45, notes:'Elbows pinned. Flare hands at bottom.'}
@@ -610,6 +610,7 @@ function initHome() {
 function startWorkout(idx) {
   currentDay = DAYS[idx];
   checked = {};
+  setCounts = {};
   cardioDone = false;
   sessionStart = Date.now();
   var old = document.getElementById('completeBtn');
@@ -663,9 +664,22 @@ function buildWorkout() {
       '<div class="cs"><div class="cv">'+c.bpm+'</div><div class="cl">Target HR</div></div>' +
       '<div class="cs"><div class="cv">Zone 2</div><div class="cl">Intensity</div></div>' +
     '</div>' +
-    '<button class="cardio-btn" id="cardioBtn">START CARDIO</button>';
+    '<div style="display:flex;gap:10px">' +
+      '<button class="cardio-btn" id="cardioBtn" style="flex:2">START TIMER</button>' +
+      '<button class="cardio-btn" id="cardioDoneBtn" style="flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:16px">DONE ✓</button>' +
+    '</div>';
   container.appendChild(cb);
   document.getElementById('cardioBtn').addEventListener('click', doneCardio);
+  document.getElementById('cardioDoneBtn').addEventListener('click', function(){
+    cardioDone = true;
+    document.getElementById('cardioBtn').textContent = 'STARTED ✓';
+    document.getElementById('cardioBtn').classList.add('done-btn');
+    document.getElementById('cardioDoneBtn').textContent = 'DONE ✓';
+    document.getElementById('cardioDoneBtn').style.background = 'var(--green)';
+    document.getElementById('cardioDoneBtn').style.color = '#000';
+    document.getElementById('cardioDoneBtn').style.borderColor = 'var(--green)';
+    checkDone();
+  });
   updateProg();
 }
 
@@ -680,23 +694,53 @@ function makeExCard(ex, key, type) {
   infDiv.innerHTML =
     '<div class="ex-nm">'+ex.name+'</div>' +
     '<div class="ex-tags">' +
-      '<span class="tag s">'+ex.sets+' sets</span>' +
+      '<span class="tag s" id="setcount_'+key+'">0 / '+ex.sets+' sets</span>' +
       '<span class="tag r">'+ex.reps+'</span>' +
       '<span class="tag t">⏱ '+ex.rest+'s</span>' +
     '</div>' +
     '<div class="ex-note">'+ex.notes+'</div>';
   var tBtn = document.createElement('button');
   tBtn.className = 'tbtn';
+  tBtn.id = 'tbtn_'+key;
   tBtn.textContent = '⏱';
   tBtn.addEventListener('click', function(e){
     e.stopPropagation();
+    if(!checked[key]) {
+      registerSet(ex, key, card);
+    }
     startTimer(ex.rest, ex.name);
   });
   card.appendChild(chkDiv);
   card.appendChild(infDiv);
   card.appendChild(tBtn);
+  // Still allow manual tap to toggle if needed
   card.addEventListener('click', function(){ toggleEx(key, card); });
   return card;
+}
+
+var setCounts = {};
+function registerSet(ex, key, card) {
+  if(!setCounts[key]) setCounts[key] = 0;
+  setCounts[key]++;
+  var countEl = document.getElementById('setcount_'+key);
+  if(setCounts[key] >= ex.sets) {
+    setCounts[key] = ex.sets;
+    if(countEl) countEl.textContent = ex.sets+' / '+ex.sets+' sets ✓';
+    // Auto check
+    if(!checked[key]) {
+      checked[key] = true;
+      card.classList.add('done');
+      var chk = document.getElementById('chk_'+key);
+      if(chk) chk.textContent = '✓';
+      // Disable timer button
+      var tbtn = document.getElementById('tbtn_'+key);
+      if(tbtn) { tbtn.style.opacity='0.4'; tbtn.style.pointerEvents='none'; }
+      updateProg();
+      checkDone();
+    }
+  } else {
+    if(countEl) countEl.textContent = setCounts[key]+' / '+ex.sets+' sets';
+  }
 }
 
 function toggleEx(key, card) {
@@ -732,7 +776,7 @@ function doneCardio() {
   if(!cardioDone) {
     startTimer(currentDay.cardio.duration*60, 'LISS Cardio');
     cardioDone = true;
-    btn.textContent = 'CARDIO DONE ✓';
+    btn.textContent = 'TIMER STARTED ✓';
     btn.classList.add('done-btn');
     checkDone();
   }
