@@ -278,6 +278,23 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100
 .tom-card.noday{border-color:var(--border);background:var(--bg2);cursor:default}
 .tom-card.noday .tom-badge{background:var(--bg3);color:var(--text3)}
 .tom-card.noday .tom-lbl{color:var(--text3)}
+.timed-tag{background:rgba(71,212,255,.05);border-color:rgba(71,212,255,.3);color:var(--accent3);cursor:pointer}
+.timed-tag:active{transform:scale(.95);background:rgba(71,212,255,.15)}
+.w-icon-btn{background:rgba(57,255,20,.05);border:1px solid rgba(57,255,20,.25);border-radius:6px;padding:2px 8px;font-family:var(--fm);font-size:10px;color:#39ff14;cursor:pointer;transition:all .2s;line-height:1.6;text-shadow:0 0 5px rgba(57,255,20,.5)}
+.w-icon-btn:active{transform:scale(.95)}
+.w-icon-btn.has-weight{border-color:rgba(57,255,20,.4);background:rgba(57,255,20,.08)}
+.w-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);z-index:600;display:none;align-items:center;justify-content:center}
+.w-modal.active{display:flex;animation:fi .2s ease}
+.w-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:28px 32px;text-align:center;width:80%;max-width:280px}
+.w-card-title{font-family:var(--fd);font-size:28px;color:var(--text);margin-bottom:4px}
+.w-card-sub{font-size:12px;color:var(--text3);margin-bottom:20px}
+.w-card-last{font-family:var(--fm);font-size:11px;color:var(--accent);margin-bottom:16px}
+.w-input{background:var(--bg4);border:1px solid var(--accent);border-radius:12px;padding:12px 16px;color:var(--text);font-family:var(--fd);font-size:36px;width:100%;text-align:center;margin-bottom:16px}
+.w-input:focus{outline:none}
+.w-btns{display:flex;gap:8px}
+.w-btn{flex:1;padding:13px;border-radius:12px;border:none;font-family:var(--fb);font-size:14px;font-weight:600;cursor:pointer}
+.w-btn.cancel{background:var(--bg3);color:var(--text2)}
+.w-btn.save{background:var(--accent);color:#000}
 </style>
 </head>
 <body>
@@ -438,6 +455,20 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100
     <div class="cmp-stat"><div class="cmp-val" id="cDay">A</div><div class="cmp-lbl">Day</div></div>
   </div>
   <button class="home-btn" onclick="finishWorkout()">BACK HOME</button>
+</div>
+
+<!-- WEIGHT MODAL -->
+<div class="w-modal" id="wModal">
+  <div class="w-card">
+    <div class="w-card-title" id="wModalTitle">Bench Press</div>
+    <div class="w-card-sub">Enter weight used</div>
+    <div class="w-card-last" id="wModalLast"></div>
+    <input class="w-input" id="wModalInput" type="number" placeholder="0" />
+    <div class="w-btns">
+      <button class="w-btn cancel" onclick="closeWeightModal()">Cancel</button>
+      <button class="w-btn save" onclick="saveWeight()">Save</button>
+    </div>
+  </div>
 </div>
 
 <!-- TIMER MODAL -->
@@ -637,7 +668,7 @@ function buildWorkout() {
   container.appendChild(lh);
   var ll = document.createElement('div');
   ll.className = 'ex-list';
-  currentDay.lifting.forEach(function(ex, i){ ll.appendChild(makeExCard(ex, 'l'+i, 'lift')); });
+  currentDay.lifting.forEach(function(ex, i){ ll.appendChild(makeExCard(ex, 'l'+i, 'lift', true)); });
   container.appendChild(ll);
 
   // Core header
@@ -647,7 +678,7 @@ function buildWorkout() {
   container.appendChild(ch);
   var cl = document.createElement('div');
   cl.className = 'ex-list';
-  currentDay.core.forEach(function(ex, i){ cl.appendChild(makeExCard(ex, 'c'+i, 'core')); });
+  currentDay.core.forEach(function(ex, i){ cl.appendChild(makeExCard(ex, 'c'+i, 'core', false)); });
   container.appendChild(cl);
 
   // Cardio header
@@ -685,7 +716,7 @@ function buildWorkout() {
   updateProg();
 }
 
-function makeExCard(ex, key, type) {
+function makeExCard(ex, key, type, showWeight) {
   var card = document.createElement('div');
   card.className = 'ex '+type;
   var chkDiv = document.createElement('div');
@@ -693,11 +724,22 @@ function makeExCard(ex, key, type) {
   chkDiv.id = 'chk_'+key;
   var infDiv = document.createElement('div');
   infDiv.className = 'ex-inf';
+  var savedW = localStorage.getItem('forge_w_'+ex.name) || '';
   infDiv.innerHTML =
     '<div class="ex-nm">'+ex.name+'</div>' +
-    '<div class="ex-tags">' +
+    '<div class="ex-tags" style="align-items:center">' +
       '<span class="tag s" id="setcount_'+key+'">0 / '+ex.sets+' sets</span>' +
-      '<span class="tag r">'+ex.reps+'</span>' +
+      (function(){
+        var isTimed = ex.reps.indexOf('sec')>=0 || ex.reps.indexOf('min')>=0;
+        if(isTimed) {
+          var m = ex.reps.match(/(\d+)\s*sec/);
+          card.dataset.timed = m ? parseInt(m[1]) : 30;
+          return '<button class="tag r timed-tag" id="treps_'+key+'">▶ '+ex.reps+'</button>';
+        }
+        card.dataset.timed = 0;
+        return '<span class="tag r">'+ex.reps+'</span>';
+      })() +
+      (showWeight ? '<button class="tag w-icon-btn'+(savedW?' has-weight':'')+'" id="wbtn_'+key+'" title="Log weight">'+(savedW?savedW+' kg':'lbs')+'</button>' : '') +
       '<span class="tag t">⏱ '+ex.rest+'s</span>' +
     '</div>' +
     '<div class="ex-note">'+ex.notes+'</div>';
@@ -717,6 +759,35 @@ function makeExCard(ex, key, type) {
   card.appendChild(tBtn);
   // Still allow manual tap to toggle if needed
   card.addEventListener('click', function(){ toggleEx(key, card); });
+
+  // Wire weight icon button
+  setTimeout(function(){
+    var wBtn = document.getElementById('wbtn_'+key);
+    if(wBtn) {
+      wBtn.addEventListener('click', function(e){
+        e.stopPropagation();
+        openWeightModal(ex.name, key);
+      });
+    }
+    var trBtn = document.getElementById('treps_'+key);
+    if(trBtn && parseInt(card.dataset.timed||0) > 0) {
+      (function(secs, name){
+        trBtn.addEventListener('click', function(e){
+          e.stopPropagation();
+          startExTimer(secs, name);
+        });
+      })(parseInt(card.dataset.timed), ex.name);
+    }
+    // Wire timed reps button (plank etc)
+    var trepsBtn = document.getElementById('treps_'+key);
+    if(trepsBtn && timedSecs > 0) {
+      trepsBtn.addEventListener('click', function(e){
+        e.stopPropagation();
+        startExTimer(timedSecs, ex.name);
+      });
+    }
+  }, 0);
+
   return card;
 }
 
@@ -822,6 +893,7 @@ function startTimer(secs, name) {
   document.getElementById('tName').textContent = 'After: '+name;
   document.getElementById('pauseBtn').textContent = 'Pause';
   updateTimerDisplay();
+  requestWakeLock();
   document.getElementById('timerModal').classList.add('active');
   timerInterval = setInterval(function(){
     if(!timerPaused){
@@ -830,6 +902,7 @@ function startTimer(secs, name) {
       if(timerSecs<=0){
         clearInterval(timerInterval);
         document.getElementById('timerModal').classList.remove('active');
+        releaseWakeLock();
         playAlert();
       }
     }
@@ -1053,6 +1126,84 @@ function toggleRchk(i, today) {
   if(idx>=0){ saved.splice(idx,1); el.classList.remove('on'); box.textContent=''; }
   else { saved.push(i); el.classList.add('on'); box.textContent='✓'; }
   localStorage.setItem(key, JSON.stringify(saved));
+}
+
+// WEIGHT MODAL
+var currentWKey = '';
+var currentWName = '';
+function openWeightModal(name, key) {
+  currentWName = name;
+  currentWKey = key;
+  var saved = localStorage.getItem('forge_w_'+name) || '';
+  document.getElementById('wModalTitle').textContent = name;
+  document.getElementById('wModalLast').textContent = saved ? 'Last session: '+saved+' kg' : '';
+  document.getElementById('wModalInput').value = saved;
+  document.getElementById('wModal').classList.add('active');
+  setTimeout(function(){ document.getElementById('wModalInput').focus(); }, 100);
+}
+function closeWeightModal() {
+  document.getElementById('wModal').classList.remove('active');
+}
+function saveWeight() {
+  var val = document.getElementById('wModalInput').value;
+  if(val) {
+    localStorage.setItem('forge_w_'+currentWName, val);
+    var btn = document.getElementById('wbtn_'+currentWKey);
+    if(btn) {
+      btn.classList.add('has-weight');
+      btn.textContent = val+' lbs';
+    }
+  }
+  closeWeightModal();
+}
+
+// EXERCISE TIMER (for planks etc)
+var wakeLock = null;
+async function requestWakeLock() {
+  try {
+    if('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch(e) {}
+}
+function releaseWakeLock() {
+  try { if(wakeLock) { wakeLock.release(); wakeLock = null; } } catch(e) {}
+}
+
+function startExTimer(secs, name) {
+  // Start wake lock to keep screen on
+  requestWakeLock();
+  // Reuse the same timer modal but with green accent
+  clearInterval(timerInterval);
+  timerSecs = secs; timerTotal = secs; timerPaused = false;
+  document.getElementById('tName').textContent = name;
+  document.getElementById('pauseBtn').textContent = 'Pause';
+  // Style circle green for exercise timer
+  document.getElementById('tCircle').style.stroke = 'var(--green)';
+  updateExTimerDisplay();
+  document.getElementById('timerModal').classList.add('active');
+  timerInterval = setInterval(function(){
+    if(!timerPaused){
+      timerSecs--;
+      updateExTimerDisplay();
+      if(timerSecs<=0){
+        clearInterval(timerInterval);
+        document.getElementById('timerModal').classList.remove('active');
+        document.getElementById('tCircle').style.stroke = 'var(--accent)'; // reset
+        releaseWakeLock();
+        playAlert();
+      }
+    }
+  }, 1000);
+}
+
+function updateExTimerDisplay() {
+  var m = Math.floor(timerSecs/60), s = timerSecs%60;
+  document.getElementById('tNum').textContent = timerSecs>=60 ? m+':'+String(s).padStart(2,'0') : timerSecs;
+  var offset = (1-(timerSecs/timerTotal))*283;
+  document.getElementById('tCircle').style.strokeDashoffset = offset;
+  // Turn red at last 5 sec
+  if(timerSecs<=5) document.getElementById('tCircle').style.stroke = '#ff4d4d';
 }
 
 // UNLOCK AUDIO
