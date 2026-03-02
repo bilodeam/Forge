@@ -106,7 +106,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100
 .tag.r{border-color:rgba(71,212,255,.2);color:var(--accent3);background:rgba(71,212,255,.05)}
 .tag.t{border-color:rgba(255,107,53,.2);color:var(--accent2);background:rgba(255,107,53,.05)}
 .ex-note{font-size:11px;color:var(--text3);margin-top:5px;font-style:italic;line-height:1.4}
-.tbtn{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:8px 10px;cursor:pointer;font-size:16px;transition:all .2s;flex-shrink:0}
+.tbtn{background:rgba(255,77,77,.15);border:1px solid rgba(255,77,77,.6);border-radius:10px;padding:8px 10px;cursor:pointer;font-size:16px;transition:all .2s;flex-shrink:0}
 .tbtn:active{transform:scale(.9);background:rgba(232,255,71,.1);border-color:var(--accent)}
 .cardio-blk{margin:8px 16px;background:linear-gradient(135deg,rgba(255,107,53,.08) 0%,var(--bg2) 100%);border:1px solid rgba(255,107,53,.2);border-radius:14px;padding:20px}
 .cardio-title{font-family:var(--fd);font-size:28px;color:var(--accent2);margin-bottom:6px}
@@ -148,11 +148,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100
 .t-btns{display:flex;gap:8px;margin-bottom:8px}
 .t-btns2{display:flex;gap:8px}
 .tbtn2{flex:1;padding:13px;border-radius:12px;border:1px solid var(--border);font-family:var(--fb);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
-.tbtn2.gray{background:var(--bg3);color:var(--text2)}
+.tbtn2.gray{background:var(--bg3);color:var(--text);border-color:rgba(255,77,77,.4)}
 .tbtn2.gray:active{background:var(--bg4)}
 .tbtn2.yellow{background:var(--accent);color:#000;border-color:var(--accent)}
 .tbtn2.yellow:active{opacity:.8}
-.tbtn2.outline{background:var(--bg3);color:var(--accent);border-color:rgba(232,255,71,.3)}
+.tbtn2.outline{background:var(--bg3);color:var(--accent);border-color:rgba(255,77,77,.4)}
 
 /* PLAN */
 #plan{background:var(--bg);overflow-y:auto;padding-bottom:100px}
@@ -304,7 +304,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100
   <div class="hero">
     <div class="hero-row">
       <div>
-        <div class="hero-lbl">Week 1 · Day 1</div>
+        <div class="hero-lbl" id="heroWeekLbl">Week 1</div>
         <div class="hero-title">FOR<span>GE</span></div>
       </div>
       <div class="rest-badge" id="restBadge" onclick="goTab('restday')">
@@ -547,7 +547,7 @@ var DAYS = [
     ],
     core:[
       {name:'Bicycle Crunch', sets:3, reps:'20 total', rest:30, notes:'Slow and deliberate. Full rotation each rep.'},
-      {name:'Decline Crunch', sets:3, reps:'15', rest:30, notes:'Full range. Hands behind head lightly.'},
+      {name:'Swiss Ball Crunch', sets:3, reps:'15', rest:30, notes:'Sit on ball, walk feet out and lie back. Full range of motion. Deeper stretch than floor crunch.'},
       {name:'Plank with Shoulder Tap', sets:2, reps:'90 sec', rest:30, notes:'Hips stay square. Minimize rotation.'}
     ],
     cardio:{duration:15, type:'Incline Treadmill or Bike', intensity:'Zone 2 intensity', bpm:'120–135 bpm'}
@@ -575,6 +575,42 @@ var DAY_MAP = {1:0, 2:1, 4:2, 5:3};
 var REST_DAYS_JS = [0,3,6];
 
 // STATE
+// Week tracking - auto reset on new week
+function getCurrentWeekKey() {
+  var d = new Date();
+  var day = d.getDay();
+  var monday = new Date(d);
+  monday.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+  return monday.getFullYear() + '-' + String(monday.getMonth()+1).padStart(2,'0') + '-' + String(monday.getDate()).padStart(2,'0');
+}
+
+function getWeekNumber() {
+  var startStr = localStorage.getItem('forge_start_week');
+  var currentKey = getCurrentWeekKey();
+  if(!startStr) {
+    localStorage.setItem('forge_start_week', currentKey);
+    startStr = currentKey;
+  }
+  var start = new Date(startStr);
+  var current = new Date(currentKey);
+  var diff = Math.round((current - start) / (7 * 24 * 60 * 60 * 1000));
+  return diff + 1;
+}
+
+// Reset completed days if we're in a new week
+var savedWeekKey = localStorage.getItem('forge_week_key');
+var currentWeekKey = getCurrentWeekKey();
+if(savedWeekKey !== currentWeekKey) {
+  // Save previous week to history before resetting
+  var prevDays = JSON.parse(localStorage.getItem('forge_completed') || '[]');
+  if(prevDays.length > 0) {
+    var weeks = JSON.parse(localStorage.getItem('forge_weeks') || '[]');
+    weeks.push({key: savedWeekKey, days: prevDays, completed: prevDays.length});
+    localStorage.setItem('forge_weeks', JSON.stringify(weeks));
+  }
+  localStorage.setItem('forge_completed', '[]');
+  localStorage.setItem('forge_week_key', currentWeekKey);
+}
 var completedDays = JSON.parse(localStorage.getItem('forge_completed') || '[]');
 var currentDay = null;
 var checked = {};
@@ -614,6 +650,7 @@ function initHome() {
   var todayIdx = DAY_MAP[today];
   var isRest = REST_DAYS_JS.indexOf(today) >= 0;
   document.getElementById('restBadge').style.display = isRest ? 'block' : 'none';
+  document.getElementById('heroWeekLbl').textContent = 'Week ' + getWeekNumber();
   var done = completedDays.length;
   document.getElementById('sDone').textContent = done;
   document.getElementById('sPct').textContent = Math.round((done/4)*100) + '%';
@@ -778,14 +815,7 @@ function makeExCard(ex, key, type, showWeight) {
         });
       })(parseInt(card.dataset.timed), ex.name);
     }
-    // Wire timed reps button (plank etc)
-    var trepsBtn = document.getElementById('treps_'+key);
-    if(trepsBtn && timedSecs > 0) {
-      trepsBtn.addEventListener('click', function(e){
-        e.stopPropagation();
-        startExTimer(timedSecs, ex.name);
-      });
-    }
+
   }, 0);
 
   return card;
