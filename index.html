@@ -56,7 +56,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100
 .dc.today::before{content:'TODAY';position:absolute;top:10px;right:14px;font-family:var(--fm);font-size:9px;color:var(--accent);letter-spacing:2px}
 .dc.done{border-color:rgba(74,222,128,.3)}
 .dc.done::after{content:'✓';position:absolute;top:10px;right:14px;color:var(--green);font-size:14px}
-.dc-num{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:16px;flex-shrink:0;background:var(--bg3);border:1px solid var(--border)}
+.dc-num{height:26px;padding:0 10px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--fm);font-size:11px;font-weight:500;letter-spacing:1.5px;white-space:nowrap;flex-shrink:0;background:var(--bg3);border:1px solid var(--border);color:var(--text2)}
 .dc.today .dc-num{background:var(--accent);color:#000;border-color:var(--accent)}
 .dc.done .dc-num{background:rgba(74,222,128,.15);color:var(--green);border-color:rgba(74,222,128,.3)}
 .dc-info{flex:1}
@@ -332,7 +332,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100
   <div class="tab-hero">
     <div class="th-lbl">Full Program</div>
     <div class="th-title">THE PLAN</div>
-    <div class="th-sub">4 days · Push · Pull · Upper · Legs</div>
+    <div class="th-sub">4 days · Upper / Lower · Zone 2 focus</div>
   </div>
   <div class="plan-days" id="planDays"></div>
   <div class="plan-nut">
@@ -342,11 +342,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100
       <span id="nutChev" style="color:var(--text3);transition:transform .3s">▾</span>
     </div>
     <div class="nut-body" id="nutBody">
-      <div class="nut-row"><div class="nut-ic">🍌</div><div><div class="nut-t">Before Training</div><div class="nut-d">Banana or half cup oats 30–60 min before. Fast carbs = energy and performance.</div></div></div>
-      <div class="nut-row"><div class="nut-ic">🥛</div><div><div class="nut-t">After Training</div><div class="nut-d">Whey protein shake within 30–60 min post-session.</div></div></div>
-      <div class="nut-row"><div class="nut-ic">🎯</div><div><div class="nut-t">Daily Protein</div><div class="nut-d">1.8–2.2g per kg of bodyweight. Non-negotiable for recomp.</div></div></div>
-      <div class="nut-row"><div class="nut-ic">📉</div><div><div class="nut-t">Calories</div><div class="nut-d">300–400 kcal below your TDEE daily.</div></div></div>
-      <div class="nut-row"><div class="nut-ic">💧</div><div><div class="nut-t">Hydration</div><div class="nut-d">3–4 liters of water daily. More on training days.</div></div></div>
+      <div class="nut-row"><div class="nut-ic">🎯</div><div><div class="nut-t">Daily Protein</div><div class="nut-d">180g/day (~2.0g/kg at 194 lb). Protects muscle while cutting. Spread across 5–6 meals.</div></div></div>
+      <div class="nut-row"><div class="nut-ic">📉</div><div><div class="nut-t">Calories (Cut)</div><div class="nut-d">~2,300–2,450 kcal/day (~400 below TDEE) → ~1–1.3 lb/week. Adjust off the weekly-average scale.</div></div></div>
+      <div class="nut-row"><div class="nut-ic">🌾</div><div><div class="nut-t">Fiber</div><div class="nut-d">Daily psyllium husk (5–10g) with a full glass of water. Best soluble fiber for LDL. Aim 30–40g total.</div></div></div>
+      <div class="nut-row"><div class="nut-ic">🫒</div><div><div class="nut-t">Saturated Fat</div><div class="nut-d">Keep it modest. Swap butter/fatty meat for olive oil, nuts, avocado, fish. Helps LDL + Lp(a) profile.</div></div></div>
+      <div class="nut-row"><div class="nut-ic">🐟</div><div><div class="nut-t">Omega-3</div><div class="nut-d">Fatty fish 2–3×/week (salmon, sardines, mackerel). Walnuts, chia, flax.</div></div></div>
+      <div class="nut-row"><div class="nut-ic">🍷</div><div><div class="nut-t">Alcohol</div><div class="nut-d">Occasional, not routine. Raises triglycerides, hurts sleep + BP.</div></div></div>
+      <div class="nut-row"><div class="nut-ic">🥛</div><div><div class="nut-t">Post-Training</div><div class="nut-d">Whey shake within 30–60 min if protein target is short.</div></div></div>
+      <div class="nut-row"><div class="nut-ic">😴</div><div><div class="nut-t">Sleep</div><div class="nut-d">7–9h. Protects muscle, appetite control, and lipids on a cut.</div></div></div>
     </div>
   </div>
   <div style="height:30px"></div>
@@ -436,7 +439,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100
     <div class="prog-wrap"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
   </div>
   <div class="wk-title-block">
-    <div class="wk-title" id="wTitle">PUSH</div>
+    <div class="wk-title" id="wTitle">WORKOUT</div>
     <div class="wk-focus" id="wFocus">Chest · Shoulders · Triceps</div>
   </div>
   <div id="wContent"></div>
@@ -502,72 +505,62 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100
 // DATA
 var DAYS = [
   {
-    id:'A', name:'PUSH', day:'Monday', focus:'Chest · Shoulders · Triceps', time:'~53 min',
+    id:'A', name:'UPPER A', day:'Monday', focus:'Horizontal Push · Pull', time:'~60 min',
     lifting:[
-      {name:'Barbell Bench Press', sets:3, reps:'8–10', rest:45, notes:'Primary chest builder. 2 sec controlled descent.'},
-      {name:'Incline DB Press', sets:3, reps:'10–12', rest:45, notes:'Upper chest. Full stretch at bottom.'},
-      {name:'DB Pec Fly', sets:3, reps:'13–15', rest:45, notes:'Wide arc down, squeeze hard at top. Keep slight bend in elbows throughout.'},
-      {name:'DB Lateral Raise', sets:3, reps:'13–15', rest:45, notes:'Light weight, strict form. No swinging.'},
-      {name:'Seated DB Overhead Press', sets:3, reps:'10–12', rest:45, notes:'Full lockout at top. Controlled descent.'},
-      {name:'Tricep Rope Pushdown', sets:3, reps:'13–15', rest:45, notes:'Elbows pinned. Flare hands at bottom.'}
+      {name:'Barbell / DB Bench Press', sets:3, reps:'6–8', rest:120, notes:'STRAIGHT SETS. Primary push. 2–3s descent, elbows ~45°, full lockout. 1–3 RIR.'},
+      {name:'Chest-Supported Row', sets:3, reps:'8–10', rest:75, notes:'⚡ SUPERSET with Incline DB Press. Drive elbows to hips, squeeze, no torso swing.'},
+      {name:'Incline DB Press', sets:3, reps:'10–12', rest:75, notes:'⚡ SUPERSET with Chest-Supported Row. Full stretch at bottom, controlled.'},
+      {name:'Face Pull', sets:3, reps:'15–20', rest:60, notes:'External rotation at the end, elbows high. Posture + shoulder longevity insurance.'},
+      {name:'Triceps Rope Pushdown', sets:3, reps:'12–15', rest:60, notes:'⚡ SUPERSET with DB Curl. Elbows pinned, full extension, flare hands at the bottom.'},
+      {name:'DB Curl', sets:3, reps:'12–15', rest:60, notes:'⚡ SUPERSET with Triceps Pushdown. Controlled, no swing, full range, supinate at top.'}
     ],
     core:[
-      {name:'Floor Crunch', sets:3, reps:'20 reps', rest:30, notes:'Chin off chest. Keep neck relaxed.'},
-      {name:'Hanging Knee Raise', sets:3, reps:'12–15', rest:30, notes:'Control the descent. Posterior pelvic tilt.'},
-      {name:'Plank', sets:2, reps:'90 sec', rest:30, notes:'Squeeze glutes, quads, abs, lats. Active tension.'}
+      {name:'Pallof Press', sets:4, reps:'10 each side', rest:45, notes:'Anti-rotation. Resist the twist, exhale on the press. Slow and controlled.'}
     ],
-    cardio:{duration:15, type:'Incline Treadmill Walk', intensity:'10–12% grade, 3.0–3.5 mph', bpm:'120–135 bpm'}
+    cardio:{duration:25, type:'Incline Treadmill Walk', intensity:'Legs fresh — hold Zone 2', bpm:'112–140 bpm'}
   },
   {
-    id:'B', name:'PULL', day:'Tuesday', focus:'Back · Rear Delts · Biceps', time:'~53 min',
+    id:'B', name:'LOWER A', day:'Tuesday', focus:'Hinge · Posterior Chain', time:'~60 min',
     lifting:[
-      {name:'Barbell Pendlay Row', sets:3, reps:'8–10', rest:45, notes:'Heavy and controlled. Full reset each rep.'},
-      {name:'Pull-Up / Lat Pulldown', sets:3, reps:'8–10', rest:45, notes:'Full ROM. If pullups are easy, add weight.'},
-      {name:'DB Rear Delt Row', sets:3, reps:'12–15', rest:45, notes:'Hinge forward 45 degrees. Elbows flare wide. Squeeze rear delts at top. Key exercise for posture.'},
-      {name:'Single-Arm DB Row', sets:3, reps:'12–15', rest:45, notes:'Brace on bench. Drive elbow to hip.'},
-      {name:'Face Pull', sets:3, reps:'15–20', rest:45, notes:'External rotation at end. Essential for shoulder health.'},
-      {name:'Incline DB Curl', sets:3, reps:'10–12', rest:45, notes:'Full stretch at bottom. Supinate at top.'}
+      {name:'Romanian Deadlift', sets:3, reps:'8–10', rest:120, notes:'STRAIGHT SETS. Primary hinge. Hips back, bar close, stop mid-shin. 2–3s eccentric. Leave 1–3 reps in reserve.'},
+      {name:'Leg Press', sets:3, reps:'10–12', rest:75, notes:'⚡ SUPERSET with Seated Leg Curl. Controlled depth, drive through heels. Don’t lock out hard.'},
+      {name:'Seated Leg Curl', sets:3, reps:'10–12', rest:75, notes:'⚡ SUPERSET with Leg Press. 3s eccentric, squeeze at top.'},
+      {name:'Bulgarian Split Squat', sets:3, reps:'10–12 each', rest:75, notes:'⚡ SUPERSET with Standing Calf Raise. Tall torso, drive through front heel.'},
+      {name:'Standing Calf Raise', sets:3, reps:'12–15', rest:60, notes:'⚡ SUPERSET with Bulgarian Split Squat. Pause 1s at top, full stretch at bottom.'}
     ],
     core:[
-      {name:'Ab Wheel Rollout', sets:3, reps:'10–12', rest:30, notes:'Control it. Keep back flat throughout.'},
-      {name:'Russian Twist', sets:3, reps:'20 total', rest:30, notes:'Feet off floor. Rotate fully each rep.'},
-      {name:'Dead Bug', sets:3, reps:'10 each side', rest:30, notes:'Lower back stays glued to floor.'}
+      {name:'Plank', sets:3, reps:'45–60 sec', rest:45, notes:'Anti-extension. Squeeze glutes + abs, ribs down, straight line head-to-heel. Active tension, don’t sag.'}
     ],
-    cardio:{duration:15, type:'Stationary Bike', intensity:'Moderate resistance', bpm:'120–135 bpm'}
+    cardio:{duration:20, type:'Bike or Rower', intensity:'Zone 2 cooldown — legs just worked', bpm:'112–140 bpm'}
   },
   {
-    id:'C', name:'UPPER', day:'Thursday', focus:'Compound Strength · Arms', time:'~53 min',
+    id:'C', name:'UPPER B', day:'Thursday', focus:'Vertical Push · Pull', time:'~60 min',
     lifting:[
-      {name:'Weighted Pull-Up', sets:3, reps:'6–8', rest:45, notes:'Add weight via belt or dumbbell between legs.'},
-      {name:'DB Bench Press', sets:3, reps:'10–12', rest:45, notes:'Controlled. Full range. Slight arch is fine.'},
-      {name:'Cable Upright Row', sets:3, reps:'12–13', rest:45, notes:'Elbows high. Traps and lateral delts.'},
-      {name:'Chest-Supported DB Row', sets:3, reps:'12–15', rest:45, notes:'No cheating. Strict. Squeeze at top.'},
-      {name:'EZ Bar Curl', sets:3, reps:'10–12', rest:45, notes:'Slow and controlled. Full range.'},
-      {name:'Skull Crusher', sets:3, reps:'10–12', rest:45, notes:'Lower behind head for max tricep stretch.'}
+      {name:'Weighted Pull-Up / Lat Pulldown', sets:3, reps:'6–10', rest:120, notes:'STRAIGHT SETS. Primary vertical pull. Full stretch, chest to bar. 2s eccentric.'},
+      {name:'Seated DB / Machine Shoulder Press', sets:3, reps:'8–10', rest:75, notes:'⚡ SUPERSET with Seated Cable Row. Full lockout, no lower-back arch.'},
+      {name:'Seated Cable Row', sets:3, reps:'10–12', rest:75, notes:'⚡ SUPERSET with Shoulder Press. Neutral grip. Squeeze blades, tall chest.'},
+      {name:'Rear-Delt Machine / Straight-Arm Pulldown', sets:3, reps:'13–15', rest:60, notes:'Slow, feel the target. Posterior shoulder + lat detail.'},
+      {name:'Overhead Rope Extension', sets:3, reps:'12–15', rest:60, notes:'⚡ SUPERSET with EZ-Bar Curl. Elbows high and tucked, full stretch behind head.'},
+      {name:'EZ-Bar Curl', sets:3, reps:'10–12', rest:60, notes:'⚡ SUPERSET with Overhead Rope Extension. Controlled, no swing, full range.'}
     ],
     core:[
-      {name:'Bicycle Crunch', sets:3, reps:'20 total', rest:30, notes:'Slow and deliberate. Full rotation each rep.'},
-      {name:'Swiss Ball Crunch', sets:3, reps:'15', rest:30, notes:'Sit on ball, walk feet out and lie back. Full range of motion. Deeper stretch than floor crunch.'},
-      {name:'Plank with Shoulder Tap', sets:2, reps:'90 sec', rest:30, notes:'Hips stay square. Minimize rotation.'}
+      {name:'Hanging Leg Raise', sets:4, reps:'10–15', rest:45, notes:'Anti-extension. Posterior pelvic tilt, no swing. Control the descent. (Sub: ab wheel.)'}
     ],
-    cardio:{duration:15, type:'Incline Treadmill or Bike', intensity:'Zone 2 intensity', bpm:'120–135 bpm'}
+    cardio:{duration:25, type:'Incline Treadmill Walk', intensity:'Legs fresh — longest Zone 2 (or bike intervals if fresh)', bpm:'112–140 bpm'}
   },
   {
-    id:'D', name:'LEGS', day:'Friday', focus:'Quads · Hamstrings · Glutes · Calves', time:'~57 min',
+    id:'D', name:'LOWER B', day:'Friday', focus:'Quad · Single-Leg', time:'~60 min',
     lifting:[
-      {name:'Single-Leg Press', sets:3, reps:'12–15 each', rest:60, notes:'Full depth. Drive through heel. Alternate legs.'},
-      {name:'Romanian Deadlift', sets:3, reps:'12–15', rest:60, notes:'110 lbs. Push hips back. Feel hamstring stretch.'},
-      {name:'Bulgarian Split Squat', sets:3, reps:'12 each', rest:45, notes:'Rear foot elevated. Front knee tracks over toe.'},
-      {name:'Walking DB Lunge', sets:3, reps:'12 each leg', rest:45, notes:'Torso upright. Full step through.'},
-      {name:'DB Step-Up', sets:3, reps:'12 each leg', rest:45, notes:'Drive through front heel only.'},
-      {name:'Standing Calf Raise', sets:3, reps:'15–20', rest:45, notes:'Full ROM. 1 sec hold at peak contraction.'}
+      {name:'Hack Squat / Leg Press', sets:3, reps:'10–12', rest:120, notes:'STRAIGHT SETS. Quad-biased, feet low. 3s descent, full control. No spinal load.'},
+      {name:'Bulgarian Split Squat', sets:3, reps:'10–12 each', rest:75, notes:'⚡ SUPERSET with Back Extension. DBs. Drive through front heel, knee tracks toe.'},
+      {name:'45° Back Extension / Hip Thrust', sets:3, reps:'12–15', rest:75, notes:'⚡ SUPERSET with Bulgarian Split Squat. Squeeze glutes at top, no lumbar overarch.'},
+      {name:'Lying Leg Curl', sets:3, reps:'10–12', rest:75, notes:'⚡ SUPERSET with Seated Calf Raise. 3s eccentric.'},
+      {name:'Seated Calf Raise', sets:3, reps:'15–20', rest:60, notes:'⚡ SUPERSET with Lying Leg Curl. Soleus focus, pause 1s at top.'}
     ],
     core:[
-      {name:'Lying Leg Raise', sets:3, reps:'15', rest:30, notes:'Lower back stays pressed down. Control descent.'},
-      {name:'Side Plank', sets:3, reps:'30 sec each side', rest:30, notes:'Hips up and forward. Keep them up.'},
-      {name:'Hollow Body Hold', sets:3, reps:'20–30 sec', rest:30, notes:'Arms extended overhead. Lower back on floor.'}
+      {name:'Suitcase Carry', sets:4, reps:'40 sec each side', rest:45, notes:'Anti-lateral-flexion. Stay square, don’t lean. Brace hard. (Sub: side plank.)'}
     ],
-    cardio:{duration:20, type:'Rower or Bike', intensity:'Zone 2, legs are fatigued', bpm:'120–135 bpm'}
+    cardio:{duration:20, type:'Bike or Rower', intensity:'Zone 2 cooldown — legs fatigued', bpm:'112–140 bpm'}
   }
 ];
 
@@ -664,9 +657,9 @@ function initHome() {
     card.innerHTML =
       '<div class="dc-num">DAY '+day.id+'</div>' +
       '<div class="dc-info">' +
-        '<div class="dc-name">'+day.name+' — '+day.focus+'</div>' +
-        '<div class="dc-focus">'+day.day+'</div>' +
-        '<div class="dc-meta">'+(day.lifting.length+day.core.length)+' exercises · '+day.cardio.duration+' min cardio · '+day.time+'</div>' +
+        '<div class="dc-name">'+day.name+'</div>' +
+        '<div class="dc-focus">'+day.focus+'</div>' +
+        '<div class="dc-meta">'+day.day+' · '+(day.lifting.length+day.core.length)+' exercises · '+day.cardio.duration+' min cardio</div>' +
       '</div>' +
       '<div class="dc-arr">'+(isDone?'':'›')+'</div>';
     if(!isDone) {
@@ -701,7 +694,7 @@ function buildWorkout() {
   // Lifting header
   var lh = document.createElement('div');
   lh.className = 'sec-hdr';
-  lh.innerHTML = '<div class="sec-ic lift">🔥</div><div><div class="sec-lbl lift">Lifting</div><div class="sec-sub">3 sets · 45 sec rest</div></div>';
+  lh.innerHTML = '<div class="sec-ic lift">🔥</div><div><div class="sec-lbl lift">Lifting</div><div class="sec-sub">3 sets · supersets · 60–120s rest</div></div>';
   container.appendChild(lh);
   var ll = document.createElement('div');
   ll.className = 'ex-list';
@@ -711,7 +704,7 @@ function buildWorkout() {
   // Core header
   var ch = document.createElement('div');
   ch.className = 'sec-hdr';
-  ch.innerHTML = '<div class="sec-ic core">💪</div><div><div class="sec-lbl core">Core Block</div><div class="sec-sub">No cables · 30 sec rest</div></div>';
+  ch.innerHTML = '<div class="sec-ic core">💪</div><div><div class="sec-lbl core">Core Block</div><div class="sec-sub">Anti-extension / rotation · 3 sets</div></div>';
   container.appendChild(ch);
   var cl = document.createElement('div');
   cl.className = 'ex-list';
@@ -721,7 +714,7 @@ function buildWorkout() {
   // Cardio header
   var kh = document.createElement('div');
   kh.className = 'sec-hdr';
-  kh.innerHTML = '<div class="sec-ic cardio">🏃</div><div><div class="sec-lbl cardio">LISS Cardio</div><div class="sec-sub">Zone 2 · Fat burning finisher</div></div>';
+  kh.innerHTML = '<div class="sec-ic cardio">🏃</div><div><div class="sec-lbl cardio">Zone 2 Cardio</div><div class="sec-sub">112–140 bpm · Primary CV work</div></div>';
   container.appendChild(kh);
 
   var c = currentDay.cardio;
@@ -1089,13 +1082,13 @@ function buildProgress() {
 
 // REST DAY
 var REST_INFO = {
-  0:{lbl:'Sunday · Rest Day', msg:'Full recovery day. Big week ahead — recharge properly.'},
-  3:{lbl:'Wednesday · Rest Day', msg:'Halfway through the week. Recover before legs tomorrow.'},
-  6:{lbl:'Saturday · Rest Day', msg:'Legs were yesterday — they need this. Eat well, sleep well.'}
+  0:{lbl:'Sunday · Rest Day', msg:'Full off (or a gentle walk). Big week ahead — recharge properly.'},
+  3:{lbl:'Wednesday · Zone 2 Day', msg:'No lifting. Get 45–60 min easy Zone 2 (walk/bike). This is where your heart gains live.'},
+  6:{lbl:'Saturday · Zone 2 Day', msg:'No lifting. 45–60 min easy Zone 2. Bank the cardio, eat well, sleep well.'}
 };
 var RCHK_DATA = [
   {ic:'💧', t:'Drank 3L water today', s:'Hydration accelerates recovery'},
-  {ic:'🥛', t:'Hit protein target', s:'1.8–2.2g per kg bodyweight'},
+  {ic:'🥛', t:'Hit protein target', s:'180g/day (~2.0g/kg)'},
   {ic:'😴', t:'Slept 7.5h+ last night', s:'Sleep is where muscle is built'},
   {ic:'🚶', t:'Hit 8,000 steps', s:'NEAT keeps metabolism active'},
   {ic:'🍌', t:'Ate well today', s:'Fuel recovery, not junk'}
