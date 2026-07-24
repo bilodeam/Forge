@@ -123,6 +123,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);max-width:430p
 .cardio-btn{width:100%;background:var(--accent2);color:#fff;border:none;border-radius:12px;padding:14px;font-family:var(--fd);font-size:20px;letter-spacing:1px;cursor:pointer;transition:all .2s}
 .cardio-btn:active{transform:scale(.98);opacity:.9}
 .cardio-btn.done-btn{background:var(--green);color:#000}
+.cardio-blk.done{border-color:rgba(74,222,128,.35);background:linear-gradient(135deg,rgba(74,222,128,.08) 0%,var(--bg2) 100%)}
+.cardio-blk.done .cardio-title{color:var(--green)}
+.cardio-blk.done{border-color:rgba(74,222,128,.35);background:linear-gradient(135deg,rgba(74,222,128,.08) 0%,var(--bg2) 100%)}
+.cardio-blk.done .cardio-title{color:var(--green)}
 
 /* COMPLETE */
 #complete{background:var(--bg);align-items:center;justify-content:center;text-align:center;padding:40px 24px}
@@ -558,8 +562,8 @@ var DAYS = [
     lifting:[
       {name:'Bulgarian Split Squat', sets:3, reps:'10–12 each', rest:120, notes:'STRAIGHT SETS. First lift. DBs. Tall torso, drive through front heel, knee tracks over toe. 1–3 RIR.'},
       {name:'Single-Leg Leg Press', sets:3, reps:'10–12 each', rest:90, notes:'STRAIGHT SETS. Light–moderate (~150 lb is fine). Full control, drive through heel. Don’t chase heavy bilateral load.'},
+      {name:'Single-Leg DB RDL', sets:3, reps:'10–12 each', rest:90, notes:'STRAIGHT SETS. Soft knee, hips back, flat back. Feel the hamstring stretch. Light touch for balance if needed.'},
       {name:'Hip Thrust', sets:3, reps:'10–12', rest:120, notes:'STRAIGHT SETS. Pause 1s at top, squeeze glutes, ribs down — no lumbar overarch.'},
-      {name:'Swiss Ball Hamstring Curl', sets:3, reps:'10–12', rest:75, notes:'STRAIGHT SETS. No curl machine needed. Heels on ball, hips up, curl heels in. Slow eccentric. (Sub: slider / towel curl.)'},
       {name:'Standing Calf Raise', sets:3, reps:'15–20', rest:60, notes:'Full ROM. Pause 1s at top. Soleus/gastroc finisher.'}
     ],
     core:[
@@ -737,16 +741,11 @@ function buildWorkout() {
       '<button class="cardio-btn" id="cardioDoneBtn" style="flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:16px">DONE ✓</button>' +
     '</div>';
   container.appendChild(cb);
-  document.getElementById('cardioBtn').addEventListener('click', doneCardio);
-  document.getElementById('cardioDoneBtn').addEventListener('click', function(){
-    cardioDone = true;
-    document.getElementById('cardioBtn').textContent = 'STARTED ✓';
-    document.getElementById('cardioBtn').classList.add('done-btn');
-    document.getElementById('cardioDoneBtn').textContent = 'DONE ✓';
-    document.getElementById('cardioDoneBtn').style.background = 'var(--green)';
-    document.getElementById('cardioDoneBtn').style.color = '#000';
-    document.getElementById('cardioDoneBtn').style.borderColor = 'var(--green)';
-    checkDone();
+  document.getElementById('cardioBtn').addEventListener('click', startCardioTimer);
+  document.getElementById('cardioDoneBtn').addEventListener('click', function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    markCardioComplete(false);
   });
   updateProg();
 }
@@ -872,15 +871,45 @@ function checkDone() {
   }
 }
 
-function doneCardio() {
+function markCardioComplete(fromTimer) {
+  cardioDone = true;
+  var blk = document.querySelector('.cardio-blk');
+  var startBtn = document.getElementById('cardioBtn');
+  var doneBtn = document.getElementById('cardioDoneBtn');
+  if(blk) blk.classList.add('done');
+  if(doneBtn) {
+    doneBtn.textContent = 'COMPLETED ✓';
+    doneBtn.style.background = 'var(--green)';
+    doneBtn.style.color = '#000';
+    doneBtn.style.borderColor = 'var(--green)';
+  }
+  if(startBtn) {
+    if(fromTimer) {
+      startBtn.textContent = 'TIMER STARTED ✓';
+      startBtn.classList.add('done-btn');
+    } else if(!startBtn.classList.contains('done-btn')) {
+      startBtn.textContent = 'SKIPPED TIMER';
+      startBtn.style.opacity = '0.55';
+    }
+  }
+  checkDone();
+}
+
+function startCardioTimer() {
   var btn = document.getElementById('cardioBtn');
-  if(!cardioDone) {
-    startTimer(currentDay.cardio.duration*60, 'LISS Cardio');
-    cardioDone = true;
+  if(btn && btn.classList.contains('done-btn')) return;
+  startTimer(currentDay.cardio.duration*60, 'Zone 2 Cardio');
+  if(btn) {
     btn.textContent = 'TIMER STARTED ✓';
     btn.classList.add('done-btn');
-    checkDone();
+    btn.style.opacity = '1';
   }
+  // Timer is optional tracking — still mark cardio complete when they start it
+  markCardioComplete(true);
+}
+
+function doneCardio() {
+  markCardioComplete(false);
 }
 
 function goComplete() {
