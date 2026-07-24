@@ -94,6 +94,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);max-width:430p
 .sec-lbl.cardio{color:var(--accent2)}
 .sec-sub{font-size:11px;color:var(--text3);margin-top:1px}
 .ex-list{padding:0 16px;display:flex;flex-direction:column;gap:8px}
+.ss-group{border:1px solid rgba(232,255,71,.28);border-radius:16px;background:rgba(232,255,71,.03);overflow:hidden;padding:0}
+.ss-hdr{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px 8px;border-bottom:1px solid rgba(232,255,71,.12)}
+.ss-badge{font-family:var(--fm);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#000;background:var(--accent);padding:4px 10px;border-radius:999px;font-weight:600}
+.ss-hint{font-family:var(--fm);font-size:9px;color:var(--text3);letter-spacing:0.5px}
+.ss-body{display:flex;flex-direction:column;gap:0;padding:6px}
+.ss-body .ex{border-radius:12px;margin:0;border-color:rgba(42,42,42,.9)}
+.ss-body .ex + .ex{margin-top:6px}
+.ss-body .ex::before{background:var(--accent);opacity:.55}
 .ex{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
 .ex::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
 .ex.lift::before{background:rgba(232,255,71,.3)}
@@ -517,11 +525,11 @@ var DAYS = [
     id:'A', name:'UPPER A', day:'Monday', focus:'Horizontal Push · Pull', time:'~60 min',
     lifting:[
       {name:'Barbell / DB Bench Press', sets:3, reps:'6–8', rest:120, notes:'STRAIGHT SETS. Primary push. 2–3s descent, elbows ~45°, full lockout. 1–3 RIR.'},
-      {name:'Chest-Supported Row', sets:3, reps:'8–10', rest:75, notes:'⚡ SUPERSET with Incline DB Press. Drive elbows to hips, squeeze, no torso swing.'},
-      {name:'Incline DB Press', sets:3, reps:'10–12', rest:75, notes:'⚡ SUPERSET with Chest-Supported Row. Full stretch at bottom, controlled.'},
+      {name:'Chest-Supported Row', sets:3, reps:'8–10', rest:75, ss:'A', notes:'Drive elbows to hips, squeeze, no torso swing.'},
+      {name:'Incline DB Press', sets:3, reps:'10–12', rest:75, ss:'A', notes:'Full stretch at bottom, controlled.'},
       {name:'Face Pull', sets:3, reps:'15–20', rest:60, notes:'External rotation at the end, elbows high. Posture + shoulder longevity insurance.'},
-      {name:'Triceps Rope Pushdown', sets:3, reps:'12–15', rest:60, notes:'⚡ SUPERSET with DB Curl. Elbows pinned, full extension, flare hands at the bottom.'},
-      {name:'DB Curl', sets:3, reps:'12–15', rest:60, notes:'⚡ SUPERSET with Triceps Pushdown. Controlled, no swing, full range, supinate at top.'}
+      {name:'Triceps Rope Pushdown', sets:3, reps:'12–15', rest:60, ss:'B', notes:'Elbows pinned, full extension, flare hands at the bottom.'},
+      {name:'DB Curl', sets:3, reps:'12–15', rest:60, ss:'B', notes:'Controlled, no swing, full range, supinate at top.'}
     ],
     core:[
       {name:'Pallof Press', sets:4, reps:'10 each side', rest:45, notes:'Anti-rotation. Resist the twist, exhale on the press. Slow and controlled.'}
@@ -532,10 +540,10 @@ var DAYS = [
     id:'B', name:'LOWER A', day:'Tuesday', focus:'Hinge · Posterior Chain', time:'~60 min',
     lifting:[
       {name:'Romanian Deadlift', sets:3, reps:'8–10', rest:120, notes:'STRAIGHT SETS. Primary hinge. Hips back, bar close, stop mid-shin. 2–3s eccentric. Leave 1–3 reps in reserve.'},
-      {name:'Leg Press', sets:3, reps:'10–12', rest:75, notes:'⚡ SUPERSET with Seated Leg Curl. Controlled depth, drive through heels. Don’t lock out hard.'},
-      {name:'Seated Leg Curl', sets:3, reps:'10–12', rest:75, notes:'⚡ SUPERSET with Leg Press. 3s eccentric, squeeze at top.'},
-      {name:'Bulgarian Split Squat', sets:3, reps:'10–12 each', rest:75, notes:'⚡ SUPERSET with Standing Calf Raise. Tall torso, drive through front heel.'},
-      {name:'Standing Calf Raise', sets:3, reps:'12–15', rest:60, notes:'⚡ SUPERSET with Bulgarian Split Squat. Pause 1s at top, full stretch at bottom.'}
+      {name:'Leg Press', sets:3, reps:'10–12', rest:75, ss:'A', notes:'Controlled depth, drive through heels. Don’t lock out hard.'},
+      {name:'Seated Leg Curl', sets:3, reps:'10–12', rest:75, ss:'A', notes:'3s eccentric, squeeze at top.'},
+      {name:'Bulgarian Split Squat', sets:3, reps:'10–12 each', rest:75, ss:'B', notes:'Tall torso, drive through front heel.'},
+      {name:'Standing Calf Raise', sets:3, reps:'12–15', rest:60, ss:'B', notes:'Pause 1s at top, full stretch at bottom.'}
     ],
     core:[
       {name:'Plank', sets:3, reps:'45–60 sec', rest:45, notes:'Anti-extension. Squeeze glutes + abs, ribs down, straight line head-to-heel. Active tension, don’t sag.'}
@@ -546,11 +554,11 @@ var DAYS = [
     id:'C', name:'UPPER B', day:'Thursday', focus:'Vertical Push · Pull', time:'~60 min',
     lifting:[
       {name:'Weighted Pull-Up / Lat Pulldown', sets:3, reps:'6–10', rest:120, notes:'STRAIGHT SETS. Primary vertical pull. Full stretch, chest to bar. 2s eccentric.'},
-      {name:'Seated DB / Machine Shoulder Press', sets:3, reps:'8–10', rest:75, notes:'⚡ SUPERSET with Seated Cable Row. Full lockout, no lower-back arch.'},
-      {name:'Seated Cable Row', sets:3, reps:'10–12', rest:75, notes:'⚡ SUPERSET with Shoulder Press. Neutral grip. Squeeze blades, tall chest.'},
+      {name:'Seated DB / Machine Shoulder Press', sets:3, reps:'8–10', rest:75, ss:'A', notes:'Full lockout, no lower-back arch.'},
+      {name:'Seated Cable Row', sets:3, reps:'10–12', rest:75, ss:'A', notes:'Neutral grip. Squeeze blades, tall chest.'},
       {name:'Rear-Delt Machine / Straight-Arm Pulldown', sets:3, reps:'13–15', rest:60, notes:'Slow, feel the target. Posterior shoulder + lat detail.'},
-      {name:'Overhead Rope Extension', sets:3, reps:'12–15', rest:60, notes:'⚡ SUPERSET with EZ-Bar Curl. Elbows high and tucked, full stretch behind head.'},
-      {name:'EZ-Bar Curl', sets:3, reps:'10–12', rest:60, notes:'⚡ SUPERSET with Overhead Rope Extension. Controlled, no swing, full range.'}
+      {name:'Overhead Rope Extension', sets:3, reps:'12–15', rest:60, ss:'B', notes:'Elbows high and tucked, full stretch behind head.'},
+      {name:'EZ-Bar Curl', sets:3, reps:'10–12', rest:60, ss:'B', notes:'Controlled, no swing, full range.'}
     ],
     core:[
       {name:'Hanging Leg Raise', sets:4, reps:'10–15', rest:45, notes:'Anti-extension. Posterior pelvic tilt, no swing. Control the descent. (Sub: ab wheel.)'}
@@ -707,7 +715,7 @@ function buildWorkout() {
   container.appendChild(lh);
   var ll = document.createElement('div');
   ll.className = 'ex-list';
-  currentDay.lifting.forEach(function(ex, i){ ll.appendChild(makeExCard(ex, 'l'+i, 'lift', true)); });
+  appendExerciseBlocks(ll, currentDay.lifting, 'lift', true);
   container.appendChild(ll);
 
   // Core header
@@ -748,6 +756,40 @@ function buildWorkout() {
     markCardioComplete(false);
   });
   updateProg();
+}
+
+function appendExerciseBlocks(listEl, exercises, type, showWeight) {
+  var i = 0;
+  var ssCount = 0;
+  while(i < exercises.length) {
+    var ex = exercises[i];
+    if(ex.ss) {
+      var groupId = ex.ss;
+      var group = [];
+      while(i < exercises.length && exercises[i].ss === groupId) {
+        group.push({ex: exercises[i], idx: i});
+        i++;
+      }
+      var letter = String.fromCharCode(65 + ssCount++);
+      var wrap = document.createElement('div');
+      wrap.className = 'ss-group';
+      wrap.innerHTML =
+        '<div class="ss-hdr">' +
+          '<span class="ss-badge">⚡ Superset '+letter+'</span>' +
+          '<span class="ss-hint">no rest between · rest after pair</span>' +
+        '</div>';
+      var body = document.createElement('div');
+      body.className = 'ss-body';
+      group.forEach(function(g){
+        body.appendChild(makeExCard(g.ex, type==='lift'?'l'+g.idx:'c'+g.idx, type, showWeight));
+      });
+      wrap.appendChild(body);
+      listEl.appendChild(wrap);
+    } else {
+      listEl.appendChild(makeExCard(ex, type==='lift'?'l'+i:'c'+i, type, showWeight));
+      i++;
+    }
+  }
 }
 
 function makeExCard(ex, key, type, showWeight) {
@@ -1016,7 +1058,8 @@ function buildPlan() {
     card.className = 'pc';
     card.id = 'pc'+i;
     var lRows = day.lifting.map(function(ex,j){
-      return '<div class="p-exrow"><div class="p-exnum">'+(j+1)+'</div><div class="p-exinf"><div class="p-exnm">'+ex.name+'</div><div class="p-extags"><span class="p-tag s">'+ex.sets+' sets</span><span class="p-tag r">'+ex.reps+'</span><span class="p-tag t">⏱ '+ex.rest+'s</span></div><div class="p-exnote">'+ex.notes+'</div></div></div>';
+      var ssTag = ex.ss ? '<span class="p-tag s">⚡ SS '+ex.ss+'</span>' : '';
+      return '<div class="p-exrow"><div class="p-exnum">'+(j+1)+'</div><div class="p-exinf"><div class="p-exnm">'+ex.name+'</div><div class="p-extags"><span class="p-tag s">'+ex.sets+' sets</span><span class="p-tag r">'+ex.reps+'</span><span class="p-tag t">⏱ '+ex.rest+'s</span>'+ssTag+'</div><div class="p-exnote">'+ex.notes+'</div></div></div>';
     }).join('');
     var cRows = day.core.map(function(ex,j){
       return '<div class="p-exrow"><div class="p-exnum">'+(j+1)+'</div><div class="p-exinf"><div class="p-exnm">'+ex.name+'</div><div class="p-extags"><span class="p-tag s">'+ex.sets+' sets</span><span class="p-tag r">'+ex.reps+'</span></div><div class="p-exnote">'+ex.notes+'</div></div></div>';
