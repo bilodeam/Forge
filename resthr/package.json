@@ -1,0 +1,11 @@
+{
+  "name": "resthr",
+  "version": "1.0.0",
+  "description": "Workout rest timer with live heart rate for Amazfit Balance",
+  "main": "app.js",
+  "author": "maxence",
+  "license": "ISC",
+  "devDependencies": {
+    "@zeppos/device-types": "^3.0.0"
+  }
+}
