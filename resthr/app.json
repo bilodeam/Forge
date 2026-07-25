@@ -1,0 +1,60 @@
+{
+  "configVersion": "v3",
+  "app": {
+    "appId": 1000101,
+    "appName": "RestHR",
+    "appType": "app",
+    "version": {
+      "code": 1,
+      "name": "1.0.0"
+    },
+    "icon": "icon.png",
+    "vender": "maxence",
+    "description": "Strength rest timer and zone-2 cardio with live heart rate"
+  },
+  "permissions": [
+    "data:user.hd.heart_rate",
+    "device:os.accelerometer",
+    "device:os.alarm",
+    "device:os.local_storage",
+    "data:user.hd.calorie",
+    "data:user.hd.step",
+    "data:user.hd.distance",
+    "data:user.hd.pai"
+  ],
+  "runtime": {
+    "apiVersion": {
+      "compatible": "3.0.0",
+      "target": "3.0.0",
+      "minVersion": "3.0"
+    }
+  },
+  "targets": {
+    "balance": {
+      "module": {
+        "page": {
+          "pages": [
+            "page/index",
+            "page/strength",
+            "page/cardio",
+            "page/posture",
+            "page/summary",
+            "page/settings"
+          ]
+        }
+      },
+      "platforms": [
+        {
+          "st": "r"
+        }
+      ],
+      "designWidth": 480
+    }
+  },
+  "i18n": {
+    "en-US": {
+      "appName": "RestHR"
+    }
+  },
+  "defaultLanguage": "en-US"
+}
