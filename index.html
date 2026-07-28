@@ -715,7 +715,7 @@ function buildWorkout() {
   container.appendChild(lh);
   var ll = document.createElement('div');
   ll.className = 'ex-list';
-  appendExerciseBlocks(ll, currentDay.lifting, 'lift', true);
+  appendExerciseBlocks(ll, currentDay.lifting, 'lift', false);
   container.appendChild(ll);
 
   // Core header
@@ -800,7 +800,6 @@ function makeExCard(ex, key, type, showWeight) {
   chkDiv.id = 'chk_'+key;
   var infDiv = document.createElement('div');
   infDiv.className = 'ex-inf';
-  var savedW = localStorage.getItem('forge_w_'+ex.name) || '';
   infDiv.innerHTML =
     '<div class="ex-nm">'+ex.name+'</div>' +
     '<div class="ex-tags" style="align-items:center">' +
@@ -815,7 +814,6 @@ function makeExCard(ex, key, type, showWeight) {
         card.dataset.timed = 0;
         return '<span class="tag r">'+ex.reps+'</span>';
       })() +
-      (showWeight ? '<button class="tag w-icon-btn'+(savedW?' has-weight':'')+'" id="wbtn_'+key+'" title="Log weight">'+(savedW?savedW+' kg':'lbs')+'</button>' : '') +
       '<span class="tag t">⏱ '+ex.rest+'s</span>' +
     '</div>' +
     '<div class="ex-note">'+ex.notes+'</div>';
@@ -836,15 +834,7 @@ function makeExCard(ex, key, type, showWeight) {
   // Still allow manual tap to toggle if needed
   card.addEventListener('click', function(){ toggleEx(key, card); });
 
-  // Wire weight icon button
   setTimeout(function(){
-    var wBtn = document.getElementById('wbtn_'+key);
-    if(wBtn) {
-      wBtn.addEventListener('click', function(e){
-        e.stopPropagation();
-        openWeightModal(ex.name, key);
-      });
-    }
     var trBtn = document.getElementById('treps_'+key);
     if(trBtn && parseInt(card.dataset.timed||0) > 0) {
       (function(secs, name){
@@ -854,7 +844,6 @@ function makeExCard(ex, key, type, showWeight) {
         });
       })(parseInt(card.dataset.timed), ex.name);
     }
-
   }, 0);
 
   return card;
