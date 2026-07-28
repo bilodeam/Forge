@@ -95,9 +95,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);max-width:430p
 .sec-sub{font-size:11px;color:var(--text3);margin-top:1px}
 .ex-list{padding:0 16px;display:flex;flex-direction:column;gap:8px}
 .ss-group{border:1px solid rgba(232,255,71,.28);border-radius:16px;background:rgba(232,255,71,.03);overflow:hidden;padding:0}
-.ss-hdr{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px 8px;border-bottom:1px solid rgba(232,255,71,.12)}
-.ss-badge{font-family:var(--fm);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#000;background:var(--accent);padding:4px 10px;border-radius:999px;font-weight:600}
-.ss-hint{font-family:var(--fm);font-size:9px;color:var(--text3);letter-spacing:0.5px}
+.ss-hdr{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px 8px;border-bottom:1px solid rgba(232,255,71,.12);flex-wrap:nowrap}
+.ss-badge{font-family:var(--fm);font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#000;background:var(--accent);padding:4px 10px;border-radius:999px;font-weight:600;white-space:nowrap;flex-shrink:0}
+.ss-hint{font-family:var(--fm);font-size:9px;color:var(--text3);letter-spacing:0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .ss-body{display:flex;flex-direction:column;gap:0;padding:6px}
 .ss-body .ex{border-radius:12px;margin:0;border-color:rgba(42,42,42,.9)}
 .ss-body .ex + .ex{margin-top:6px}
@@ -775,8 +775,8 @@ function appendExerciseBlocks(listEl, exercises, type, showWeight) {
       wrap.className = 'ss-group';
       wrap.innerHTML =
         '<div class="ss-hdr">' +
-          '<span class="ss-badge">⚡ Superset '+letter+'</span>' +
-          '<span class="ss-hint">no rest between · rest after pair</span>' +
+          '<span class="ss-badge">⚡ SS '+letter+'</span>' +
+          '<span class="ss-hint">no rest between</span>' +
         '</div>';
       var body = document.createElement('div');
       body.className = 'ss-body';
