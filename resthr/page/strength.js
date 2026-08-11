@@ -7,8 +7,8 @@ import * as keys from '../utils/keys'
 import * as restAlarm from '../utils/rest-alarm'
 import { RepDetector } from '../utils/rep-detector'
 import { getSettings } from '../utils/store'
-import { COLOR, TICK_MS, PHASE, MODE, ARC, SCREEN } from '../utils/constants'
-import { clock, mmss, bpm } from '../utils/format'
+import { COLOR, TICK_MS, PHASE, MODE, ARC, SCREEN, CLOCK_24H } from '../utils/constants'
+import { clock, mmss, bpm, timeOfDay } from '../utils/format'
 import { deriveZones } from '../utils/zones'
 
 /* ============================================================================
@@ -27,7 +27,7 @@ import { deriveZones } from '../utils/zones'
  *   y  22  heart glyph
  *   y  72  TOTAL TIME / HEART RATE captions
  *   y  94  values (18:42 | 128 BPM)
- *   y 146  phase pill  (SET 3 / REST / OVERTIME)
+ *   y 146  phase pill  (SET 3 / REST · 3 / OT · 3)
  *   y 198  hero number (reps or countdown)
  *   y 330  caption + divider rules
  *   y 362  secondary value (set time) or controls (reps, chips)
@@ -59,7 +59,7 @@ Page({
 
     this.settings = getSettings()
     haptics.configure(this.settings.alertLevel)
-    this.detector = new RepDetector()
+    this.detector = new RepDetector(this.settings.repSensitivity)
     this.confirming = false
     this.overlay = null
     this.lastPersistAt = 0
@@ -225,7 +225,7 @@ Page({
 
     this.wTotalCap = U.text({
       x: 100, y: 72, w: 136, h: 22,
-      size: 17, color: COLOR.DIMMER, text: 'TOTAL TIME',
+      size: 17, color: COLOR.DIMMER, text: 'STRENGTH',
     })
     this.wTotal = U.text({
       x: 100, y: 94, w: 136, h: 42,
@@ -249,13 +249,23 @@ Page({
       align: U.ui.align.LEFT,
     })
 
-    // Phase pill. Filled dark rather than outlined: a stroked rounded rect
-    // needs a widget type that isn't guaranteed, and the fill reads the same.
+    /*
+     * Time of day, bottom centre, same position on every screen so your eye
+     * learns one spot. Deliberately no seconds: two live timers already
+     * compete for attention and a ticking third would win.
+     */
+    this.wClock = U.text({
+      y: 434, h: 26, size: 22, color: COLOR.TEXT, text: '',
+    })
+
+    // Phase pill. Wider than before so "REST · 3" / "SET 12" stay one line.
+    // Filled dark rather than outlined: a stroked rounded rect needs a widget
+    // type that isn't guaranteed, and the fill reads the same.
     this.wPill = U.rect({
-      x: 172, y: 146, w: 136, h: 44, radius: 22, color: 0x0d2f27,
+      x: 156, y: 146, w: 168, h: 44, radius: 22, color: 0x0d2f27,
     })
     this.wPillLabel = U.text({
-      x: 172, y: 146, w: 136, h: 44,
+      x: 156, y: 146, w: 168, h: 44,
       size: 25, color: COLOR.ACCENT, text: 'SET 1',
     })
   },
@@ -264,20 +274,24 @@ Page({
     this.setGroup = []
 
     this.wReps = U.text({
-      y: 198, h: 126, size: 108, color: COLOR.TEXT, text: '0',
+      y: 196, h: 120, size: 102, color: COLOR.TEXT, text: '0',
     })
     this.wRepsCaption = U.text({
-      y: 330, h: 26, size: 20, color: COLOR.DIM, text: 'REPS',
+      y: 320, h: 24, size: 20, color: COLOR.DIM, text: 'REPS',
     })
     // Rules either side of the caption, as in the reference.
-    this.wRuleL = U.rect({ x: 150, y: 342, w: 58, h: 2, color: COLOR.DIVIDER })
-    this.wRuleR = U.rect({ x: 272, y: 342, w: 58, h: 2, color: COLOR.DIVIDER })
+    this.wRuleL = U.rect({ x: 150, y: 331, w: 58, h: 2, color: COLOR.DIVIDER })
+    this.wRuleR = U.rect({ x: 272, y: 331, w: 58, h: 2, color: COLOR.DIVIDER })
 
     this.wSetTime = U.text({
-      y: 362, h: 48, size: 40, color: COLOR.TEXT, text: '0:00',
+      y: 352, h: 46, size: 38, color: COLOR.TEXT, text: '0:00',
     })
     this.wSetTimeCaption = U.text({
-      y: 410, h: 24, size: 19, color: COLOR.DIMMER, text: 'SET TIME',
+      y: 398, h: 22, size: 18, color: COLOR.DIMMER, text: 'SET TIME',
+    })
+    // Hairline so SET TIME and the clock don't read as one stacked group.
+    this.wClockRule = U.rect({
+      x: 196, y: 428, w: 88, h: 1, color: 0x1c1c1e,
     })
 
     this.setGroup.push(
@@ -286,7 +300,8 @@ Page({
       this.wRuleL,
       this.wRuleR,
       this.wSetTime,
-      this.wSetTimeCaption
+      this.wSetTimeCaption,
+      this.wClockRule
     )
   },
 
@@ -295,23 +310,23 @@ Page({
     const self = this
 
     this.wCountdown = U.text({
-      y: 188, h: 112, size: 96, color: COLOR.ACCENT, text: '0:00',
+      y: 186, h: 110, size: 96, color: COLOR.ACCENT, text: '0:00',
     })
     this.restGroup.push(this.wCountdown)
 
     // Rep correction. Buttons rather than the crown, because crown-rotation
     // capture isn't reliably available to Mini Programs on every firmware.
     const minus = U.circleButton({
-      x: 96, y: 308, w: 54, h: 54,
+      x: 96, y: 304, w: 54, h: 52,
       color: COLOR.CHIP_OFF, textColor: COLOR.TEXT, size: 32, text: '-',
       onClick: function () { self.adjustReps(-1) },
     })
     this.wRestReps = U.text({
-      x: 158, y: 308, w: 164, h: 54,
+      x: 158, y: 304, w: 164, h: 52,
       size: 30, color: COLOR.TEXT, text: '0 reps',
     })
     const plus = U.circleButton({
-      x: 330, y: 308, w: 54, h: 54,
+      x: 330, y: 304, w: 54, h: 52,
       color: COLOR.CHIP_OFF, textColor: COLOR.TEXT, size: 32, text: '+',
       onClick: function () { self.adjustReps(1) },
     })
@@ -321,13 +336,13 @@ Page({
     const longSec = this.settings.restLong
 
     const chipShort = U.circleButton({
-      x: 104, y: 370, w: 124, h: 56,
+      x: 104, y: 364, w: 124, h: 54,
       color: COLOR.CHIP_OFF, textColor: COLOR.TEXT, size: 28,
       text: shortSec + 's',
       onClick: function () { self.chooseRest(shortSec) },
     })
     const chipLong = U.circleButton({
-      x: 252, y: 370, w: 124, h: 56,
+      x: 252, y: 364, w: 124, h: 54,
       color: COLOR.CHIP_OFF, textColor: COLOR.TEXT, size: 28,
       text: longSec + 's',
       onClick: function () { self.chooseRest(longSec) },
@@ -347,6 +362,7 @@ Page({
     U.setVisibleAll(this.restGroup, !inSet)
 
     if (inSet) {
+      U.restScreenOnSet()
       this.detector.reset()
       this.detector.setCount(s.currentReps || 0)
       if (this.settings.repDetect) {
@@ -362,6 +378,8 @@ Page({
       this.detector.stop()
       this.refreshChips()
       this.refreshRestReps()
+      // Bright for a few seconds so you see the countdown, then auto-dim.
+      U.restScreenOnRest()
     }
   },
 
@@ -394,6 +412,7 @@ Page({
   chooseRest(seconds) {
     const s = session.state()
     if (s.phase !== PHASE.REST) return
+    U.restScreenOnRest()
     haptics.tap()
     session.setRestSeconds(seconds)
     const remaining = Math.round(session.restRemainingMs() / 1000)
@@ -427,6 +446,7 @@ Page({
   adjustReps(delta) {
     const s = session.state()
     if (s.phase !== PHASE.REST) return
+    U.restScreenOnRest()
     // Deliberately silent. Correcting a rep count is a fiddly, repeated action
     // -- buzzing on every tap turns a small fix into a wrist massage.
     session.adjustLastSetReps(delta)
@@ -443,7 +463,7 @@ Page({
       this.wPillLabel.setProperty(U.ui.prop.TEXT, text)
       this.wPillLabel.setProperty(U.ui.prop.MORE, { color: textColor })
       this.wPill.setProperty(U.ui.prop.MORE, {
-        x: 172, y: 146, w: 136, h: 44, radius: 22, color: fill,
+        x: 156, y: 146, w: 168, h: 44, radius: 22, color: fill,
       })
     } catch (e) {}
   },
@@ -455,7 +475,10 @@ Page({
     const now = Date.now()
     const hrValue = hr.current()
 
-    this.wTotal.setProperty(U.ui.prop.TEXT, clock(session.totalMs()))
+    // STRENGTH time, not session total: switching to cardio banks this and the
+    // number stops. It resumes if you come back.
+    this.wTotal.setProperty(U.ui.prop.TEXT, clock(session.strengthMs()))
+    this.wClock.setProperty(U.ui.prop.TEXT, timeOfDay(CLOCK_24H))
     this.wHr.setProperty(U.ui.prop.TEXT, bpm(hrValue))
 
     // Right arc: heart rate across its display range.
@@ -491,7 +514,9 @@ Page({
       if (remaining > 0) {
         this.wCountdown.setProperty(U.ui.prop.TEXT, mmss(remaining))
         this.setCountdownColor(COLOR.ACCENT)
-        this.setPill('REST', COLOR.ACCENT, 0x0d2f27)
+        // Same pill slot as SET N -- setIndex is still the set you just finished
+        // until startNextSet() runs.
+        this.setPill('REST · ' + s.setIndex, COLOR.ACCENT, 0x0d2f27)
         // Left arc DRAINS -- how much rest is left, without reading a number.
         this.updateArc('left', remaining / totalRest)
       } else {
@@ -499,11 +524,13 @@ Page({
         // set -- starting a set you aren't doing corrupts the log.
         this.wCountdown.setProperty(U.ui.prop.TEXT, '+' + mmss(-remaining))
         this.setCountdownColor(COLOR.DANGER)
-        this.setPill('OVERTIME', COLOR.DANGER, 0x3a1210)
+        this.setPill('OT · ' + s.setIndex, COLOR.DANGER, 0x3a1210)
         this.updateArc('left', 0)
 
         if (!s.restBuzzedAt) {
           s.restBuzzedAt = now
+          // Bring the screen up with the buzz so OT is readable at a glance.
+          U.restScreenOnRest()
           const ok = haptics.restDone()
           const st = haptics.status()
           console.log(
@@ -542,6 +569,7 @@ Page({
   onEndRequested() {
     if (this.confirming) return
     this.confirming = true
+    U.restScreenBright()
     haptics.tap()
 
     const self = this
@@ -584,6 +612,7 @@ Page({
     restAlarm.cancel()
     haptics.stop()
     this.detector.stop()
+    U.restScreenDispose()
     session.switchMode(MODE.CARDIO)
     router.replace({ url: 'page/cardio' })
   },
@@ -594,12 +623,15 @@ Page({
       this.overlay = null
     }
     this.confirming = false
+    // If we closed the menu during rest, re-arm auto-dim.
+    if (session.state().phase === PHASE.REST) U.restScreenOnRest()
   },
 
   endWorkout() {
     restAlarm.cancel()
     haptics.stop()
     this.detector.stop()
+    U.restScreenDispose()
     session.end()
     router.replace({ url: 'page/summary' })
   },
@@ -608,6 +640,8 @@ Page({
 
   onResume() {
     U.keepAwake()
+    if (session.state().phase === PHASE.REST) U.restScreenOnRest()
+    else U.restScreenOnSet()
     if (this.timer) this.tick()
   },
 
@@ -622,6 +656,7 @@ Page({
     if (this.tap) this.tap.destroy()
     this.dismissOverlay()
     session.persist()
+    U.restScreenDispose()
     U.releaseAwake()
   },
 })

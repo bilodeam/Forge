@@ -1,6 +1,6 @@
 import * as ui from '@zos/ui'
 import * as display from '@zos/display'
-import { COLOR, SCREEN, BRIGHT_TIME_MS, LONG_PRESS_MS } from './constants'
+import { COLOR, SCREEN, BRIGHT_TIME_MS, LONG_PRESS_MS, REST_DIM } from './constants'
 
 /*
  * Thin wrappers over @zos/ui. There is no flexbox and no layout engine here --
@@ -257,23 +257,145 @@ export function tapLayer(targets, onTap, onLongPress) {
  * while suspended, and the rest buzz still fires because it's alarm-backed.
  */
 export function keepAwake() {
+  /*
+   * Four separate things can put this screen to sleep, and setPageBrightTime
+   * only addresses one of them. The earlier version of this function missed
+   * the other two entirely, which is the likeliest reason a rest buzz got
+   * missed: the screen slept on wrist-drop, JS suspended, and the foreground
+   * tick stopped.
+   *
+   *   setPageBrightTime      -- the inactivity timeout
+   *   pauseDropWristScreenOff-- sleeping when you lower your arm  <- was missing
+   *   pausePalmScreenOff     -- sleeping when you cover the watch <- was missing
+   *   setWakeUpRelaunch      -- come back to the app, not the watchface
+   *
+   * duration: 0 means "indefinitely". Both pauses are reset on page destroy
+   * by releaseAwake(), so this never leaks past the workout.
+   */
   try {
     display.setPageBrightTime({ brightTime: BRIGHT_TIME_MS })
   } catch (e) {}
   try {
-    // Relaunch the Mini Program (rather than the watchface) when the screen
-    // wakes, so a wrist-raise mid-rest puts you back on the timer.
+    display.pauseDropWristScreenOff({ duration: 0 })
+  } catch (e) {}
+  try {
+    display.pausePalmScreenOff({ duration: 0 })
+  } catch (e) {}
+  try {
     display.setWakeUpRelaunch({ relaunch: true })
   } catch (e) {}
 }
 
 export function releaseAwake() {
+  // Hand normal sleep behaviour back to the system. A 1ms pause effectively
+  // ends an indefinite one.
   try {
     display.setPageBrightTime({ brightTime: 0 })
   } catch (e) {}
   try {
+    display.pauseDropWristScreenOff({ duration: 1 })
+  } catch (e) {}
+  try {
+    display.pausePalmScreenOff({ duration: 1 })
+  } catch (e) {}
+  try {
     display.setWakeUpRelaunch({ relaunch: false })
   } catch (e) {}
+}
+
+/* ---------------------------------------------------------------------------
+ * Rest auto-dim: lower backlight during rest without suspending the page.
+ * Sensors + countdown keep running; tap / set / rest-end restore brightness.
+ * -------------------------------------------------------------------------*/
+let _restDimTimer = null
+let _restDimmed = false
+let _restSavedBrightness = null
+let _restSavedAuto = null
+
+function captureRestDisplay() {
+  try {
+    if (_restSavedBrightness === null && typeof display.getBrightness === 'function') {
+      _restSavedBrightness = display.getBrightness()
+    }
+  } catch (e) {}
+  try {
+    if (_restSavedAuto === null && typeof display.getAutoBrightness === 'function') {
+      _restSavedAuto = !!display.getAutoBrightness()
+    }
+  } catch (e) {}
+  if (_restSavedAuto === null) _restSavedAuto = true
+}
+
+function applyBrightness(level) {
+  try {
+    display.setAutoBrightness({ autoBright: false })
+  } catch (e) {
+    try {
+      display.setAutoBrightness(false)
+    } catch (e2) {}
+  }
+  try {
+    const r = display.setBrightness({ brightness: level })
+    return r === 0 || r === undefined || r === true
+  } catch (e) {
+    try {
+      display.setBrightness(level)
+      return true
+    } catch (e2) {
+      return false
+    }
+  }
+}
+
+/** Restore pre-dim brightness (and auto-bright if it was on). */
+export function restScreenBright() {
+  if (_restDimTimer) {
+    clearTimeout(_restDimTimer)
+    _restDimTimer = null
+  }
+  if (!_restDimmed) return
+  try {
+    if (_restSavedAuto) {
+      display.setAutoBrightness({ autoBright: true })
+    } else if (_restSavedBrightness !== null) {
+      applyBrightness(_restSavedBrightness)
+    } else {
+      applyBrightness(55)
+    }
+  } catch (e) {
+    try {
+      applyBrightness(55)
+    } catch (e2) {}
+  }
+  _restDimmed = false
+}
+
+function restScreenDimNow() {
+  captureRestDisplay()
+  if (applyBrightness(REST_DIM.BRIGHTNESS)) {
+    _restDimmed = true
+  }
+}
+
+/** Call when entering REST (or after a tap during rest): bright now, dim soon. */
+export function restScreenOnRest() {
+  restScreenBright()
+  _restDimTimer = setTimeout(function () {
+    _restDimTimer = null
+    restScreenDimNow()
+  }, REST_DIM.DELAY_MS)
+}
+
+/** Call when entering SET or leaving the strength page. */
+export function restScreenOnSet() {
+  restScreenBright()
+}
+
+/** Full cleanup on page destroy -- restore system display prefs. */
+export function restScreenDispose() {
+  restScreenBright()
+  _restSavedBrightness = null
+  _restSavedAuto = null
 }
 
 /*

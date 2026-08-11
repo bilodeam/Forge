@@ -40,6 +40,7 @@ export const DEFAULT_SETTINGS = {
   zoneLow: 120, // bpm -- bottom of zone 2
   zoneHigh: 135, // bpm -- top of zone 2 (your number)
   repDetect: true, // master switch for accelerometer rep counting
+  repSensitivity: 0, // index into REP_SENSITIVITY -- 0 STRICT, 1 NORMAL, 2 LOOSE
   alertLevel: 2, // 0 light, 1 medium, 2 strong -- see ALERT_LEVELS
   keyDebug: false, // show a live readout of physical key events on screen
 }
@@ -65,45 +66,68 @@ export const SETTING_LIMITS = {
 }
 
 /* ---------------------------------------------------------------------------
- * ZONE 2 ALERTING
- * The whole point of these numbers is to stop the watch buzzing at you every
- * few seconds while you hover on the boundary, which is exactly where you'll
- * spend the session. Raise BREACH_MS if it still feels twitchy; raise
- * COOLDOWN_MS if it nags.
+ * ZONE 2 ALERTING (high side = zone 3+)
+ *
+ * Desired loop while HR stays above zoneHigh:
+ *   5s continuously high → ~2s buzz → 15s quiet → repeat until back in zone.
+ *
+ * Evaluated on the UI tick (not only on HR callbacks) so a stable high reading
+ * still arms the timer even when the sensor goes quiet between samples.
  * -------------------------------------------------------------------------*/
 export const ZONE = {
-  BREACH_MS: 10000, // must be continuously out of zone this long before buzzing
-  COOLDOWN_MS: 30000, // minimum gap between two zone buzzes
-  GRACE_MS: 45000, // no zone alerts at all for this long after starting cardio
-  // Optical HR is noisy. A single sample outside the band shouldn't reset or
-  // trigger anything; we require this many consecutive out-of-band samples.
+  BREACH_MS: 5000, // continuously high this long before buzzing
+  COOLDOWN_MS: 15000, // quiet gap between buzz cycles
+  GRACE_MS: 20000, // no zone alerts for this long after starting cardio
+  // Optical HR is noisy. Require a few consecutive out-of-band samples so one
+  // spike doesn't start the breach clock.
   MIN_SAMPLES: 3,
 }
 
 /* ---------------------------------------------------------------------------
  * REP DETECTION TUNING
  *
- * Algorithm: accelerometer magnitude -> slow EMA removes gravity/orientation
- * -> fast EMA smooths noise -> hysteresis crossing counter.
+ * v2 algorithm -- see the long comment at the top of utils/rep-detector.js for
+ * why v1 (magnitude peaks) over-counted by roughly 3x.
  *
- * A rep is counted when the smoothed signal rises above +THRESHOLD and then
- * falls back below -THRESHOLD * HYSTERESIS, no sooner than REFRACTORY_MS after
- * the previous rep.
+ * Signal chain:
+ *   gravity  = slow EMA of the raw vector      (orientation)
+ *   dynamic  = raw - gravity                    (movement)
+ *   axis     = EMA of the dynamic direction     (which way you're moving)
+ *   signal   = dynamic . axis                   (SIGNED -> one cycle per rep)
  *
- * Units are cm/s^2 (gravity is ~981). If it UNDER-counts, lower MIN_THRESHOLD
- * and ADAPTIVE_GAIN. If it OVER-counts (phantom reps from fidgeting), raise
- * them. Change one at a time and do a set of 10 slow curls to check.
+ * Units are cm/s^2 (gravity is ~981).
  * -------------------------------------------------------------------------*/
 export const REP = {
-  BASELINE_ALPHA: 0.02, // slow EMA -- tracks gravity, must be much slower than a rep
-  SMOOTH_ALPHA: 0.35, // fast EMA -- noise smoothing, higher = more responsive
-  ENVELOPE_ALPHA: 0.05, // tracks recent movement amplitude for the adaptive threshold
-  MIN_THRESHOLD: 90, // cm/s^2 floor -- stops it counting you standing still
-  ADAPTIVE_GAIN: 0.55, // threshold = max(MIN_THRESHOLD, envelope * ADAPTIVE_GAIN)
-  HYSTERESIS: 0.5, // fraction of threshold the signal must fall back through
-  REFRACTORY_MS: 550, // fastest plausible rep (~1.8 reps/sec)
-  IDLE_RESET_MS: 8000, // no crossings for this long -> reset the arming state
+  GRAVITY_ALPHA: 0.01, // must be far slower than a rep, fast enough to track wrist turns
+  AXIS_ALPHA: 0.05, // how quickly the movement axis adapts to a new exercise
+  AXIS_MIN_MAG: 60, // only learn the axis from samples with real movement in them
+  SMOOTH_ALPHA: 0.2, // noise smoothing on the projected signal
+  ENVELOPE_ALPHA: 0.03, // tracks recent amplitude, feeds the adaptive threshold
+  HYSTERESIS: 0.6, // fraction of threshold the signal must fall back through
+  PRIME_SAMPLES: 60, // let the filters settle before counting anything
+  CADENCE_FLOOR: 0.55, // reject reps arriving inside 55% of the running median gap
+  CADENCE_WINDOW: 5, // how many recent intervals the median is taken over
 }
+
+/* ---------------------------------------------------------------------------
+ * REP SENSITIVITY -- tunable on the watch, Settings -> REP SENSITIVITY.
+ *
+ * Biased toward UNDER-counting on purpose. A count of 8 when you did 10 is a
+ * two-tap fix on the rest screen; a count of 30 is unusable. STRICT is the
+ * default for exactly that reason.
+ *
+ *   minRepMs      -- hard floor between reps. The bluntest, most effective
+ *                    anti-double-count control. Raise this first if it still
+ *                    over-counts.
+ *   minThreshold  -- floor on the detection threshold, in cm/s^2. Raise to
+ *                    ignore small movements; lower if short-ROM reps are missed.
+ *   gain          -- threshold as a fraction of recent movement amplitude.
+ * -------------------------------------------------------------------------*/
+export const REP_SENSITIVITY = [
+  { name: 'STRICT', minRepMs: 1400, minThreshold: 160, gain: 0.7 },
+  { name: 'NORMAL', minRepMs: 1100, minThreshold: 120, gain: 0.6 },
+  { name: 'LOOSE', minRepMs: 800, minThreshold: 90, gain: 0.5 },
+]
 
 /* ---------------------------------------------------------------------------
  * HR ZONE BAR (cardio screen)
@@ -171,9 +195,22 @@ export const ARC = {
 /* ---------------------------------------------------------------------------
  * TIMING / DISPLAY
  * -------------------------------------------------------------------------*/
+/* Clock shown at the bottom of the workout screens. 24h by default. */
+export const CLOCK_24H = true
+
 export const TICK_MS = 200 // UI refresh rate. 200ms is smooth enough and cheap.
 export const BRIGHT_TIME_MS = 600000 // how long to hold the screen awake per page
 export const LONG_PRESS_MS = 800 // hold-anywhere-to-end threshold
+/*
+ * REST AUTO-DIM (strength mode)
+ * Stay bright for DELAY_MS after rest starts / a tap, then drop to BRIGHTNESS
+ * (0-100). Page stays awake (HR + countdown keep running); only the backlight
+ * eases off. Tap / rest-end buzz brings brightness back.
+ */
+export const REST_DIM = {
+  DELAY_MS: 8000,
+  BRIGHTNESS: 18,
+}
 /*
  * RESUME WINDOW -- measured from the last time the session was TOUCHED, not
  * from when it started.
