@@ -75,12 +75,15 @@ export const SETTING_LIMITS = {
  * still arms the timer even when the sensor goes quiet between samples.
  * -------------------------------------------------------------------------*/
 export const ZONE = {
-  BREACH_MS: 5000, // continuously high this long before buzzing
-  COOLDOWN_MS: 15000, // quiet gap between buzz cycles
+  BREACH_MS: 5000, // out of zone 2 this long before buzzing
+  COOLDOWN_MS: 15000, // quiet gap between buzz cycles while still out
   GRACE_MS: 20000, // no zone alerts for this long after starting cardio
-  // Optical HR is noisy. Require a few consecutive out-of-band samples so one
+  // Optical HR is noisy. Require a few consecutive out-of-band ticks so one
   // spike doesn't start the breach clock.
   MIN_SAMPLES: 3,
+  // Must be *back in zone 2* this long before we clear a breach. Without this,
+  // a 134↔136 flicker resets the 5s timer forever and the buzz never fires.
+  RECOVER_MS: 2500,
 }
 
 /* ---------------------------------------------------------------------------

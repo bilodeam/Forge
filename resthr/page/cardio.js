@@ -5,29 +5,31 @@ import * as hr from '../utils/hr'
 import * as haptics from '../utils/haptics'
 import * as keys from '../utils/keys'
 import { getSettings } from '../utils/store'
-import { COLOR, TICK_MS, ZONE, ZONE_BAR, MODE } from '../utils/constants'
-import { clock, bpm, pct } from '../utils/format'
+import { COLOR, TICK_MS, ZONE, ZONE_BAR, MODE, CLOCK_24H } from '../utils/constants'
+import { clock, bpm, pct, timeOfDay } from '../utils/format'
 import { deriveZones, zoneIndexFor } from '../utils/zones'
 
 /* ============================================================================
  * Cardio page. One timer, live HR, zone-2 policing.
  *
- * The alerting rules exist to stop the watch nagging you every few seconds
- * while you sit on the boundary -- which is exactly where you'll spend the
- * session, because that's the point. A buzz requires ALL of:
+ * Zone-high loop (HR >= zoneHigh ≈ zone 3+):
+ *   ~5s out of zone 2 → ~2s buzz → 15s quiet → repeat until back in band.
+ *
+ * A buzz requires ALL of:
  *   - past the opening grace period
- *   - at least ZONE.MIN_SAMPLES consecutive readings outside the band
- *   - continuously outside for ZONE.BREACH_MS
+ *   - at least ZONE.MIN_SAMPLES consecutive out-of-band ticks
+ *   - out for ZONE.BREACH_MS (brief flickers back in don't reset; need RECOVER_MS)
  *   - at least ZONE.COOLDOWN_MS since the last buzz
- * All four live in constants.js.
  *
- * Patterns are directional so you can correct without looking:
- *   three short taps = too high, ease off
- *   two long buzzes  = too low, pick it up
+ * Patterns:
+ *   high  = taps across ~2s ("ease off")
+ *   low   = two long buzzes ("push")
  *
- * IMPORTANT: the five-segment bar is a DISPLAY device. Only zone 2 comes from
- * real numbers you supplied; zones 1/3/4/5 are extrapolated for context. See
- * ZONE_BAR in constants.js. Alerts never consult them.
+ * Alerts run from tick() using the latest HR, not only from sensor callbacks --
+ * callback-only checks were easy to miss when the sensor went quiet while high.
+ *
+ * IMPORTANT: the five-segment bar is DISPLAY. Only zone 2 comes from your
+ * numbers; zones 1/3/4/5 are extrapolated. Alerts use zoneLow/zoneHigh only.
  * ==========================================================================*/
 
 const PERSIST_EVERY_MS = 5000
@@ -35,7 +37,7 @@ const PERSIST_EVERY_MS = 5000
 /* Bar geometry */
 const BAR_X = 90
 const BAR_W = 300
-const BAR_Y = 282
+const BAR_Y = 276
 const BAR_H = 28
 const SEG_W = BAR_W / 5
 
@@ -65,6 +67,7 @@ Page({
     this.breachBand = null
     this.breachStartedAt = 0
     this.breachSamples = 0
+    this.recoverStartedAt = 0
     this.lastAlertAt = 0
     this.litIndex = -1
 
@@ -85,7 +88,7 @@ Page({
     // Cardio has no "advance" action -- only hold-to-end.
     const self = this
     this.tap = U.tapLayer(
-      [this.bg, this.wElapsed, this.wElapsedCap, this.wHr, this.wPctCap, this.wPct],
+      [this.bg, this.wElapsed, this.wElapsedCap, this.wHr, this.wPctCap, this.wPct, this.wClock],
       null,
       function () {
         self.onEndRequested()
@@ -100,7 +103,9 @@ Page({
     })
 
     hr.start(function (value) {
-      self.onHeartRate(value)
+      // Keep session stats fresh; zone policing runs from tick() so a steady
+      // high reading still arms the 5s timer without needing a new callback.
+      session.recordHr(value, self.bounds)
     })
 
     this.tick()
@@ -114,7 +119,7 @@ Page({
     const high = this.settings.zoneHigh
 
     this.wElapsedCap = U.text({
-      y: 52, h: 22, size: 17, color: COLOR.DIMMER, text: 'TOTAL TIME',
+      y: 52, h: 22, size: 17, color: COLOR.DIMMER, text: 'CARDIO TIME',
     })
     this.wElapsed = U.text({
       y: 74, h: 42, size: 34, color: COLOR.TEXT, text: '0:00',
@@ -127,11 +132,11 @@ Page({
      * at this size spans roughly x=145..335, so x=356 clears it.
      */
     this.wHr = U.text({
-      y: 126, h: 130, size: 116, color: COLOR.ACCENT, text: '--',
+      y: 122, h: 126, size: 112, color: COLOR.ACCENT, text: '--',
     })
-    U.image({ x: 356, y: 168, w: 36, h: 32, src: 'heart-outline.png' })
+    U.image({ x: 356, y: 164, w: 36, h: 32, src: 'heart-outline.png' })
     U.text({
-      x: 344, y: 206, w: 60, h: 26,
+      x: 344, y: 202, w: 60, h: 26,
       size: 18, color: COLOR.DIM, text: 'BPM',
     })
 
@@ -173,30 +178,39 @@ Page({
     })
 
     this.wZoneLabel = U.text({
-      y: 318, h: 28, size: 22, color: COLOR.ACCENT, text: 'ZONE 2',
+      y: 310, h: 26, size: 22, color: COLOR.ACCENT, text: 'ZONE 2',
     })
     U.text({
-      y: 348, h: 26, size: 20, color: COLOR.DIM,
+      y: 338, h: 24, size: 19, color: COLOR.DIM,
       text: low + ' - ' + high + ' BPM',
     })
 
-    U.rect({ x: 140, y: 382, w: 200, h: 1, color: COLOR.DIVIDER })
+    U.rect({ x: 140, y: 368, w: 200, h: 1, color: COLOR.DIVIDER })
 
     this.wPctCap = U.text({
-      y: 388, h: 22, size: 17, color: COLOR.DIMMER, text: 'IN ZONE',
+      y: 374, h: 20, size: 16, color: COLOR.DIMMER, text: 'IN ZONE',
     })
     this.wPct = U.text({
-      y: 408, h: 42, size: 36, color: COLOR.ACCENT, text: '0%',
+      y: 394, h: 36, size: 32, color: COLOR.ACCENT, text: '0%',
+    })
+
+    // Same position as the strength screen.
+    this.wClock = U.text({
+      y: 434, h: 26, size: 22, color: COLOR.TEXT, text: '',
     })
   },
 
   /* ------------------------------------------------------------ HR + zones */
 
-  onHeartRate(value) {
+  /*
+   * Zone police. Called every tick with the latest bpm. Returns early while
+   * HR is 0 (sensor still hunting) so we don't treat "no signal" as in-zone.
+   */
+  evaluateZone(value) {
+    if (!(value > 0)) return
+
     const low = this.settings.zoneLow
     const high = this.settings.zoneHigh
-    session.recordHr(value, this.bounds)
-
     const now = Date.now()
     const s = session.state()
 
@@ -206,12 +220,19 @@ Page({
       return
     }
 
-    const band = value > high ? 'above' : value < low ? 'below' : 'in'
+    // Match the on-screen ZONE 3 label: zone 2 is [low, high), above is >= high.
+    const band = value >= high ? 'above' : value < low ? 'below' : 'in'
 
     if (band === 'in') {
-      this.resetBreach()
+      // Sticky breach: brief dips back to 134 while "in zone 3" on average
+      // used to wipe the 5s timer. Require sustained in-zone before clearing.
+      if (!this.breachBand) return
+      if (!this.recoverStartedAt) this.recoverStartedAt = now
+      if (now - this.recoverStartedAt >= ZONE.RECOVER_MS) this.resetBreach()
       return
     }
+
+    this.recoverStartedAt = 0
 
     if (band !== this.breachBand) {
       // Switched sides (or first reading outside) -- restart the clock.
@@ -224,17 +245,20 @@ Page({
     this.breachSamples++
     if (this.breachSamples < ZONE.MIN_SAMPLES) return
     if (now - this.breachStartedAt < ZONE.BREACH_MS) return
-    if (now - this.lastAlertAt < ZONE.COOLDOWN_MS) return
+    if (this.lastAlertAt && now - this.lastAlertAt < ZONE.COOLDOWN_MS) return
 
     this.lastAlertAt = now
-    if (band === 'above') haptics.zoneHigh()
-    else haptics.zoneLow()
+    console.log('[zone] alert band=' + band + ' hr=' + value + ' high=' + high)
+    const ok = band === 'above' ? haptics.zoneHigh() : haptics.zoneLow()
+    // If the short-tap scene isn't available on this firmware, still make noise.
+    if (!ok) haptics.restDone()
   },
 
   resetBreach() {
     this.breachBand = null
     this.breachStartedAt = 0
     this.breachSamples = 0
+    this.recoverStartedAt = 0
   },
 
   lightSegment(index) {
@@ -264,7 +288,9 @@ Page({
     const low = this.settings.zoneLow
     const high = this.settings.zoneHigh
 
-    this.wElapsed.setProperty(U.ui.prop.TEXT, clock(session.totalMs()))
+    // CARDIO time, not session total -- starts from zero when you switch in.
+    this.wElapsed.setProperty(U.ui.prop.TEXT, clock(session.cardioMs()))
+    this.wClock.setProperty(U.ui.prop.TEXT, timeOfDay(CLOCK_24H))
     this.wHr.setProperty(U.ui.prop.TEXT, bpm(value))
 
     let color = COLOR.DIM
@@ -306,6 +332,10 @@ Page({
 
     const tracked = session.zoneTrackedMs()
     this.wPct.setProperty(U.ui.prop.TEXT, pct(session.zoneInMs(), tracked))
+
+    // Zone alerts: run here so a sustained high HR still triggers even when
+    // the sensor stops emitting callbacks for a few seconds.
+    this.evaluateZone(value)
 
     if (now - this.lastPersistAt > PERSIST_EVERY_MS) {
       this.lastPersistAt = now
